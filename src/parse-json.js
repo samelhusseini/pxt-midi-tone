@@ -98,10 +98,9 @@ function convertToPXTMelody(data) {
     }
     if (target == "arcade") {
         output.value += `];
+
 function runMusic() {
-    tracks.forEach(t => {
-        t.playUntilDone();
-    });
+    tracks.forEach(t => t.playUntilDone());
 }
 
 runMusic();`;
