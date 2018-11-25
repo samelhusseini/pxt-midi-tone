@@ -1,40 +1,55 @@
 window.onload = function() {
     if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
         document.querySelector("#FileDrop #Text").textContent = "Reading files not supported by this browser";
-    } else {
-        var fileDrop = document.querySelector("#FileDrop");
-        
-        fileDrop.addEventListener("dragenter", function () {
-            fileDrop.classList.add("Hover");
-        });
-
-        fileDrop.addEventListener("dragleave", function () {
-            fileDrop.classList.remove("Hover");
-        });
-
-        fileDrop.addEventListener("drop", function () {
-            fileDrop.classList.remove("Hover");
-        });
-
-        document.querySelector("#FileDrop input").addEventListener("change", function (e) {
-            //get the files
-            var files = e.target.files;
-            if (files.length > 0) {
-                var file = files[0];
-                document.querySelector("#FileDrop #Text").textContent = file.name;
-                parseFile(file);
-            }
-        });
-
-        document.getElementById("TargetSelect").addEventListener("change", function (e) {
-            var files = document.querySelector("#FileDrop input").files;
-            if (files.length > 0) {
-                var file = files[0];
-                document.querySelector("#FileDrop #Text").textContent = file.name;
-                parseFile(file);
-            }
-        });
+        return;
     }
+
+    var fileDrop = document.querySelector("#FileDrop");
+    var target = document.getElementById("TargetSelect");
+
+    if (!isIFrame()) {
+        const url = new URL(window.location.href);
+        var chosen = url.searchParams.get("target");
+        if (chosen) chosen = chosen.toUpperCase();
+
+        for (let option of target.options) {
+            const choice = option.value;
+            if (choice.toUpperCase() == chosen) {
+                target.value = choice;
+            }
+        }
+    }
+    
+    fileDrop.addEventListener("dragenter", function () {
+        fileDrop.classList.add("Hover");
+    });
+
+    fileDrop.addEventListener("dragleave", function () {
+        fileDrop.classList.remove("Hover");
+    });
+
+    fileDrop.addEventListener("drop", function () {
+        fileDrop.classList.remove("Hover");
+    });
+
+    document.querySelector("#FileDrop input").addEventListener("change", function (e) {
+        //get the files
+        var files = e.target.files;
+        if (files.length > 0) {
+            var file = files[0];
+            document.querySelector("#FileDrop #Text").textContent = file.name;
+            parseFile(file);
+        }
+    });
+
+    document.getElementById("TargetSelect").addEventListener("change", function (e) {
+        var files = document.querySelector("#FileDrop input").files;
+        if (files.length > 0) {
+            var file = files[0];
+            document.querySelector("#FileDrop #Text").textContent = file.name;
+            parseFile(file);
+        }
+    });
 }
 
 function parseFile(file) {
@@ -188,4 +203,15 @@ function roundDuration(beat, duration) {
         count++;
     }
     return count;
+}
+
+/**
+ * Taken from https://github.com/Microsoft/pxt-neoanim/blob/76ab334622687e4a6b6d844f6804f682f7da671a/index.html#L76
+ */
+function isIFrame() {
+    try {
+        return window && window.self !== window.top;
+    } catch (e) {
+        return true;
+    }
 }
