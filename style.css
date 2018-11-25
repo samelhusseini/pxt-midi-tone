@@ -5,19 +5,6 @@ body {
     margin: 0px;
 }
 
-#Topbar {
-    width: calc(100% - 6px);
-    height: 35px;
-    background-color: black;
-    position: absolute;
-    left: 3px;
-    top: 3px;
-}
-
-#Topbar #TonejsLogo {
-    margin-top: 3px;
-}
-
 #FileDrop {
     position: absolute;
     width: 500px;
@@ -25,15 +12,15 @@ body {
     margin-left: -250px;
     border: 2px dashed black;
     left: 50%;
-    margin-top: 70px;
+    margin-top: 90px;
     color: black;
 }
 
 #Target {
     position: absolute;
-    margin-left: 50px;
+    width: 100%;
     border: 2px black;
-    margin-top: 70px;
+    margin-top: 50px;
     color: black;
 }
 
@@ -67,14 +54,13 @@ textarea {
     width: 100%;
     display: inline-block;
     position: relative;
-    float: left;
 }
 
 #Results {
     position: absolute;
     width: 500px;
     margin-left: -250px;
-    top: 300px;
+    top: 320px;
     left: 50%;
     position: absolute;
 }
@@ -84,32 +70,5 @@ textarea {
     width: 100%;
     height: 40px;
     font-size: 20px;
-    bottom: 0px;
-}
-
-#Settings {
-    background-color: black;
-    left: 20px;
-    top: 70px;
-    width: 125px;
-    height: auto;
-    padding-bottom: 10px;
-    position: absolute;
-}
-
-#Settings span {
-    width: 60px;
-    float: left;
-    color: white;
-    font-size: 12px;
-    text-align: left;
-    margin-left: 10px;
-    margin-top: 10px;
-}
-
-#Settings input {
-    width: 30px;
-    float: left;
-    margin-left: 10px;
-    margin-top: 10px;
+    top: 15px;
 }

@@ -1,9 +1,4 @@
 window.onload = function() {
-    var logo = new Logo({
-        "width": 130,
-        "height": 30,
-        "container": "#Topbar"
-    });
     if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
         document.querySelector("#FileDrop #Text").textContent = "Reading files not supported by this browser";
     } else {
