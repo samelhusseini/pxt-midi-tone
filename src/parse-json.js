@@ -4,8 +4,8 @@ window.onload = function() {
         return;
     }
 
-    var fileDrop = document.querySelector("#FileDrop");
-    var target = document.getElementById("TargetSelect");
+    const fileDrop = document.querySelector("#FileDrop");
+    const target = document.getElementById("TargetSelect");
 
     if (!isIFrame()) {
         const url = new URL(window.location.href);
