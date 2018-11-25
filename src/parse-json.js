@@ -89,6 +89,7 @@ function convertToPXTMelody(data) {
 
     for (let t = 0; t < tracks.length; t++) {
         let track = parseTrack(tracks[t], bpm, beat, totalDuration);
+        if (track.notes.length == 1 && track.notes[0].charAt(0) == "R") continue;
 
         switch (target) {
             case "microbit": {
@@ -162,6 +163,7 @@ function parseTrack(track, bpm, beat, totalDuration) {
 
     var currentNote;
     var currentDuration = 0;
+
     for (var i = 0; i < notesPerBeat.length; i++) {
         var note = notesPerBeat[i] ? notesPerBeat[i][0] : 'R';
         if (!currentNote) {
@@ -177,6 +179,7 @@ function parseTrack(track, bpm, beat, totalDuration) {
             }
         }
     }
+
     if (currentDuration) {
         retArray.push(currentNote + ":" + currentDuration);
     }
