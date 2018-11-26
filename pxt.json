@@ -1,5 +1,5 @@
 {
-    "name": "midi tone",
+    "name": "miditone",
     "version": "0.0.1",
     "description": "A MIDI file to MakeCode tone converter",
     "license": "MIT",
