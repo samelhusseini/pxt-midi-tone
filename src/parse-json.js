@@ -1,4 +1,6 @@
 window.onload = function() {
+    const extId = window.location.hash.substr(1);
+
     if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
         document.querySelector("#FileDrop #Text").textContent = "Reading files not supported by this browser";
         return;
@@ -51,7 +53,6 @@ window.onload = function() {
         }
     });
 }
-
 function parseFile(file) {
     //read the file
     var reader = new FileReader();
