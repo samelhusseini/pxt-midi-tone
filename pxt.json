@@ -1,0 +1,21 @@
+{
+    "name": "midi tone",
+    "version": "0.0.1",
+    "description": "A MIDI file to MakeCode tone converter",
+    "license": "MIT",
+    "dependencies": {
+        "core": "*"
+    },
+    "files": [
+        "README.md"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "public": true,
+    "extension": {
+        "namespace": "music",
+        "label": "MIDI converter",
+        "localUrl": "http://127.0.0.1:8080/index.html"
+    }
+}
