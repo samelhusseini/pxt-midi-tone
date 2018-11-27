@@ -104,7 +104,7 @@ function convertToPXTMelody(data) {
                 break;
             }
             case "arcade": {
-                output.value += "\tnew music.Melody('" + track.notes.join(" ") + "'),\n"
+                output.value += "    new music.Melody('" + track.notes.join(" ") + "'),\n"
             }
         }
     }
