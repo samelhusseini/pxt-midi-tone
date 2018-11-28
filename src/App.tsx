@@ -13,8 +13,8 @@ export interface AppState {
 }
 
 interface Track {
-    notes: string[],
-    instrument: string
+    notes: string[];
+    instrument: string;
 }
 
 declare let MidiConvert: any;
@@ -95,7 +95,7 @@ export class App extends React.Component<{}, AppState> {
         let beat = (60 / bpm) / 4; // in ms
         let totalDuration = data.duration;
 
-        let parsed = [];
+        let parsed: Track[] = [];
         for (let t = 0; t < tracks.length; t++) {
             let track = this.parseTrack(tracks[t], bpm, beat, totalDuration);
             if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
@@ -205,7 +205,7 @@ namespace music {
         }, "*");
     }
 
-    parseTrack(track: any, bpm: number, beat: number, totalDuration: number) {
+    parseTrack(track: any, bpm: number, beat: number, totalDuration: number): Track {
         var notes = track.notes;
         // Resolve conflicts
         // If they overlap in time, the highest one wins
