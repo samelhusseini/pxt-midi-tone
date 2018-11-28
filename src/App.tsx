@@ -80,7 +80,7 @@ export class App extends React.Component<{}, AppState> {
 
     // handle the response
     receivedResponse = (resp: any) => {
-
+        console.log(resp);
     }
 
     parseFile(file: any) {
@@ -107,17 +107,13 @@ export class App extends React.Component<{}, AppState> {
             if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
         }
 
-        let output: string;
-
         if (target == "arcade") {
-            output = `let tracks = [
-    `;
+            return this.outputMixer(parsed, extensionId);
         } else if (target == "json") {
-            output = JSON.stringify(data, undefined, 2);
-            return output;
-        } else {
-            output = "";
+            return JSON.stringify(data, undefined, 2);
         }
+
+        let output = "";
 
         parsed.forEach(track => {
             switch (target) {
@@ -131,29 +127,14 @@ export class App extends React.Component<{}, AppState> {
                     output += "music.playSoundUntilDone('" + track.notes.join(" ") + "');\n";
                     break;
                 }
-                case "arcade": {
-                    output += "    new music.Melody('" + track.notes.join(" ") + "'),\n"
-                }
             }
         });
-
-        if (target == "arcade") {
-            output += `];
-
-function runMusic() {
-    tracks.forEach(t => t.playUntilDone());
-}
-
-runMusic();`;
-            this.outputMixer(parsed, extensionId);
-        }
 
         return output;
     }
 
     outputMixer(tracks: Track[], extensionId: string) {
-        let output = `
-// Auto-generated. Do not edit.
+        let output = `// Auto-generated. Do not edit.
 enum SongList {
     //% block="ExampleSong"
     EXAMPLESONG,
@@ -197,7 +178,7 @@ namespace music {
     }
 
     songs[SongList.EXAMPLESONG] = new Song([
-        ${ tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n")}
+        ${ tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n        ")}
     ]);
 }
 // Auto-generated. Do not edit. Really.
