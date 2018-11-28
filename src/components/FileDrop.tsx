@@ -43,7 +43,7 @@ export class FileDrop extends React.Component<FileDropProps, {}> {
     render() {
         return (
             <div id="FileDrop" ref={(e) => { this.fileDrop = e }}>
-                <div id="Text">Drop a midi file here</div>
+                <div id="Text">Drop a MIDI file here</div>
                 <input type="file" accept="audio/midi" onChange={this.onFileChange} />
             </div>
         );
