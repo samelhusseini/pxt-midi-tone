@@ -153,7 +153,7 @@ runMusic();`;
 
     outputMixer(tracks: Track[], extensionId: string) {
         let output = `
-// automatically generated; do not edit
+// Auto-generated. Do not edit.
 enum SongList {
     //% block="ExampleSong"
     EXAMPLESONG,
@@ -200,6 +200,7 @@ namespace music {
         ${ tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n")}
     ]);
 }
+// Auto-generated. Do not edit. Really.
 `
         window.parent.postMessage({
             id: Math.random().toString(),
@@ -211,6 +212,7 @@ namespace music {
                 json: JSON.stringify(tracks)
             }
         }, "*");
+        console.log(output);
         return output;
     }
 
