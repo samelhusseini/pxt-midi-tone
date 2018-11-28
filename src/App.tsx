@@ -11,8 +11,14 @@ export interface AppState {
 }
 
 interface Track {
-    notes: string[],
-    instrument: string
+    notes: string[];
+    instrument: string;
+}
+
+interface Song {
+    id: string;
+    title: string;
+    tracks: Track[];
 }
 
 declare let MidiConvert: any;
@@ -144,10 +150,12 @@ runMusic();`;
 
     outputMixer(tracks: Track[], extensionId: string) {
         let output = `
+// automatically generated; do not edit
 enum SongList {
     //% block="ExampleSong"
     EXAMPLESONG,
 }
+
 namespace music {
     class Song {
         tracks: Melody[];
@@ -200,6 +208,7 @@ namespace music {
                 json: JSON.stringify(tracks)
             }
         }, "*");
+        return output;
     }
 
     parseTrack(track: any, bpm: number, beat: number, totalDuration: number) {
