@@ -2,7 +2,15 @@
     "name": "pxt-midi-tone",
     "version": "0.0.1",
     "description": "",
+    "scripts": {
+        "develop": "webpack --mode development --watch",
+        "build": "webpack --mode production",
+        "prepublish": "webpack"
+    },
     "devDependencies": {
-        "midiconvert": "0.4.7"
+        "midiconvert": "0.4.7",
+        "webpack": "4.26.1",
+        "webpack-cli": "3.1.2",
+        "autoprefixer": "9.3.1"
     }
 }
