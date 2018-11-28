@@ -1,5 +1,6 @@
+var extId;
 window.onload = function() {
-    const extId = window.location.hash.substr(1);
+    extId = window.location.hash.substr(1);
 
     if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
         document.querySelector("#FileDrop #Text").textContent = "Reading files not supported by this browser";
@@ -20,6 +21,14 @@ window.onload = function() {
                 target.value = choice;
             }
         }
+    } else {  // is in iFrame
+        window.addEventListener("message", function(ev) {
+            var resp = ev.data;
+            if (!resp) return;
+
+            if (resp.type === "pxtpkgext")
+              receivedResponse(resp);
+          }, false);
     }
     
     fileDrop.addEventListener("dragenter", function () {
@@ -53,6 +62,12 @@ window.onload = function() {
         }
     });
 }
+
+// handle the response
+function receivedResponse(resp) {
+    
+}
+
 function parseFile(file) {
     //read the file
     var reader = new FileReader();
@@ -88,10 +103,16 @@ function convertToPXTMelody(data) {
         output.value = "";
     }
 
+    var parsed = [];
+
     for (let t = 0; t < tracks.length; t++) {
         let track = parseTrack(tracks[t], bpm, beat, totalDuration);
-        if (track.notes.length == 1 && track.notes[0].charAt(0) == "R") continue;
+        if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) {
+            parsed.push(track);
+        }
+    }
 
+    parsed.forEach(track => {
         switch (target) {
             case "microbit": {
                 output.value += "Instrument: " + track.instrument + "\n";
@@ -107,7 +128,8 @@ function convertToPXTMelody(data) {
                 output.value += "    new music.Melody('" + track.notes.join(" ") + "'),\n"
             }
         }
-    }
+    });
+
     if (target == "arcade") {
         output.value += `];
 
@@ -116,6 +138,17 @@ function runMusic() {
 }
 
 runMusic();`;
+
+        window.parent.postMessage({
+                id: Math.random().toString(),
+                type: "pxtpkgext",
+                action: "extwritecode",
+                extId: extId,
+                body: {
+                    code: output.value,
+                    json: JSON.stringify(parsed)
+                }
+            }, "*");
     }
 }
 
