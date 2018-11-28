@@ -4,6 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
     <script type="text/javascript" src="https://tonejs.github.io/MidiConvert/build/MidiConvert.js"></script>
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>pxt-midi-tone</title>
@@ -11,32 +13,6 @@
 
 <body>
     <div id="root"></div>
-
-    <!-- Dependencies -->
-    <script src="../node_modules/react/umd/react.development.js"></script>
-    <script src="../node_modules/react-dom/umd/react-dom.development.js"></script>
-
-    <!-- Main -->
-    <script type="text/javascript" src="./bundle.js"></script>
-    <div id="Description">Parse a MIDI file into a MakeCode-friendly JSON format.</div>
-
-    <div id="Target">
-        <select id="TargetSelect">
-            <option value="microbit">MicroBit</option>
-            <option value="adafruit">Adafruit</option>
-            <option value="arcade">Arcade</option>
-            <option value="json">JSON</option>
-          </select>
-    </div>
-
-    <div id="FileDrop">
-        <div id="Text">Drop a midi file here</div>
-        <input type="file" accept="audio/midi">
-    </div>
-
-    <div id="Results">
-        <textarea id="ResultsText"></textarea>
-    </div>
-</body>
+<script type="text/javascript" src="js/app.bundle.js"></script><script type="text/javascript" src="js/vendor.bundle.js"></script></body>
 
 </html>
