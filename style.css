@@ -7,13 +7,16 @@ body {
 
 #FileDrop {
     position: absolute;
-    width: 500px;
-    height: 200px;
-    margin-left: -250px;
-    border: 2px dashed black;
-    left: 50%;
-    margin-top: 90px;
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+    border: 1px dashed #BAC9E3;
+    border-radius: 2px;
+    left: 10px;
+    right: 10px;
+    top: 10px;
     color: black;
+    background: #F7F9FD;
+    transition: background-color 0.1s ease;
 }
 
 #Target {
@@ -25,7 +28,7 @@ body {
 }
 
 #FileDrop.Hover {
-    background-color: black;
+    background-color: #3298FE;
     color: white;
 }
 
@@ -39,30 +42,29 @@ body {
 }
 
 #FileDrop #Text {
-    position: absolute;
-    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     height: 100%;
-    line-height: 200px;
-    left: 0px;
-    top: 0px;
-    text-align: center;
+    font-size: 40px;
 }
 
 textarea {
     font-family: "Roboto Mono"monospace;
     height: 300px;
     width: 100%;
+    height: 100%;
     display: inline-block;
     position: relative;
 }
 
 #Results {
     position: absolute;
-    width: 500px;
-    margin-left: -250px;
-    top: 320px;
-    left: 50%;
-    position: absolute;
+    top: 75px;
+    left: 10px;
+    bottom: 10px;
+    width: calc(100% - 20px);
+    height: calc(100% - 85px);
 }
 
 #Description {
