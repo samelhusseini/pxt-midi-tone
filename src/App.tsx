@@ -32,7 +32,7 @@ export class App extends React.Component<{}, AppState> {
         super(props);
 
         this.state = {
-            target: this.getDefaultTarget() || "microbit",
+            target: this.getDefaultTarget(),
             hasFileSupport: this.isSupported(),
             extensionId: this.isIFrame() ? window.location.hash.substr(1) : undefined,
             hideTarget: this.isIFrame()
@@ -52,6 +52,7 @@ export class App extends React.Component<{}, AppState> {
             const url = new URL(window.location.href);
             let chosen = url.searchParams.get("target");
             if (chosen) return chosen.toLowerCase();
+            return "microbit"
         }
         return undefined;
     }
@@ -80,7 +81,14 @@ export class App extends React.Component<{}, AppState> {
 
     // handle the response
     receivedResponse = (resp: any) => {
-
+        console.log(resp);
+        const target = resp.target;
+        switch (resp.event) {
+            case "extloaded":
+                // Loaded, set the target
+                this.setState({ target })
+                break;
+        }
     }
 
     parseFile(file: any) {
@@ -197,7 +205,7 @@ namespace music {
     }
 
     songs[SongList.EXAMPLESONG] = new Song([
-        ${ tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n")}
+        ${ tracks.map(track => `new Melody('${track.notes.join(" ")}'),`).join("\n")}
     ]);
 }
 `
@@ -305,7 +313,7 @@ namespace music {
         }]
 
         return (
-            <div className="App">
+            <div className={`App ${!target ? 'dimmable dimmed' : ''}`}>
                 {!hasFileSupport ?
                     <div>Reading files not supported by this browser</div> :
                     <div className="ui text container">
