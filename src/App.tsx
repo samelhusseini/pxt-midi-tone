@@ -1,10 +1,12 @@
 
 import * as React from 'react';
+import { Menu, Dropdown } from 'semantic-ui-react'
 
 import { FileDrop } from './components/FileDrop';
 
 export interface AppState {
     target?: string;
+    hideTarget?: boolean;
     hasFileSupport?: boolean;
     partsData?: any;
 }
@@ -19,7 +21,8 @@ export class App extends React.Component<{}, AppState> {
 
         this.state = {
             target: this.getDefaultTarget() || "microbit",
-            hasFileSupport: this.isSupported()
+            hasFileSupport: this.isSupported(),
+            hideTarget: this.isIFrame()
         }
 
         this.parseFile = this.parseFile.bind(this);
@@ -51,8 +54,8 @@ export class App extends React.Component<{}, AppState> {
         }
     }
 
-    onTargetChange(e: any) {
-        this.setState({ target: e.target.value });
+    onTargetChange(e: any, { value }: any) {
+        this.setState({ target: value });
     }
 
     componentDidMount() {
@@ -61,13 +64,13 @@ export class App extends React.Component<{}, AppState> {
             if (!resp) return;
 
             if (resp.type === "pxtpkgext")
-              this.receivedResponse(resp);
-          }, false);
+                this.receivedResponse(resp);
+        }, false);
     }
 
     // handle the response
     receivedResponse = (resp: any) => {
-        
+
     }
 
     parseFile(file: any) {
@@ -206,33 +209,39 @@ runMusic();`;
 
 
     render() {
-        const { target, partsData, hasFileSupport } = this.state;
+        const { target, hideTarget, partsData, hasFileSupport } = this.state;
+
+        const targetOptions = [{
+            text: 'micro:bit',
+            value: 'microbit'
+        }, {
+            text: 'Adafruit',
+            value: 'adafruit'
+        }, {
+            text: 'Arcade',
+            value: 'arcade'
+        }, {
+            text: 'JSON',
+            value: 'json'
+        }]
 
         return (
             <div className="App">
                 {!hasFileSupport ?
                     <div>Reading files not supported by this browser</div> :
-                    <div>
-                        <div className="App-header">
-                            <h2>Parse a MIDI file into a MakeCode-friendly JSON format.</h2>
-                        </div>
-
-                        <div id="Target">
-                            <select id="TargetSelect" onChange={this.onTargetChange}>
-                                <option value="microbit" selected={target == "microbit"}>MicroBit</option>
-                                <option value="adafruit" selected={target == "adafruit"}>Adafruit</option>
-                                <option value="arcade" selected={target == "arcade"}>Arcade</option>
-                                <option value="json" selected={target == "json"}>JSON</option>
-                            </select>
-                        </div>
-
-                        <FileDrop parseFile={this.parseFile} />
-
+                    <div className="ui text container">
                         {partsData ?
-                            <div id="Results">
-                                <textarea id="ResultsText" value={this.getResults()}></textarea>
-                            </div>
-                            : undefined}
+                            <div>
+                                <Menu fixed="top">
+                                    {!hideTarget ? <Menu.Item name='targetselector'>
+                                        <Dropdown placeholder='Target' fluid selection defaultValue={target} options={targetOptions} onChange={this.onTargetChange} />
+                                    </Menu.Item> : undefined}
+                                </Menu>
+                                <div id="Results">
+                                    <textarea id="ResultsText" value={this.getResults()}></textarea>
+                                </div>
+                            </div> :
+                            <FileDrop parseFile={this.parseFile} />}
                     </div>
                 }
             </div>
