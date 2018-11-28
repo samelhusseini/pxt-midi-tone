@@ -1,7 +1,7 @@
 {
     "name": "pxt-midi-tone",
     "version": "0.0.1",
-    "description": "A MIDI file to MakeCode tone converter",
+    "description": "A MakeCode extension to convert MIDI files to tones",
     "homepage": "https://samelhusseini.github.io/pxt-midi-tone/",
     "scripts": {
         "build": "./node_modules/.bin/webpack",
