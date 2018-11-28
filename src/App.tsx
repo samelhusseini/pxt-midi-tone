@@ -9,6 +9,12 @@ export interface AppState {
     hideTarget?: boolean;
     hasFileSupport?: boolean;
     partsData?: any;
+    extensionId?: string;
+}
+
+interface Track {
+    notes: string[],
+    instrument: string
 }
 
 declare let MidiConvert: any;
@@ -22,6 +28,7 @@ export class App extends React.Component<{}, AppState> {
         this.state = {
             target: this.getDefaultTarget() || "microbit",
             hasFileSupport: this.isSupported(),
+            extensionId: this.isIFrame() ? window.location.hash.substr(1) : undefined,
             hideTarget: this.isIFrame()
         }
 
@@ -31,10 +38,7 @@ export class App extends React.Component<{}, AppState> {
     }
 
     isSupported() {
-        if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
-            return false;
-        }
-        return true;
+        return window.File && window.FileReader && window.FileList && window.Blob
     }
 
     getDefaultTarget() {
@@ -84,14 +88,21 @@ export class App extends React.Component<{}, AppState> {
     }
 
     getResults() {
-        const { target, partsData: data } = this.state;
+        const { target, partsData: data, extensionId } = this.state;
 
-        let tracks = data.tracks;
+        let tracks: Track[] = data.tracks;
         let bpm = data.header.bpm;
         let beat = (60 / bpm) / 4; // in ms
         let totalDuration = data.duration;
 
-        let output;
+        let parsed = [];
+        for (let t = 0; t < tracks.length; t++) {
+            let track = this.parseTrack(tracks[t], bpm, beat, totalDuration);
+            if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
+        }
+
+        let output: string;
+
         if (target == "arcade") {
             output = `let tracks = [
     `;
@@ -102,18 +113,15 @@ export class App extends React.Component<{}, AppState> {
             output = "";
         }
 
-        for (let t = 0; t < tracks.length; t++) {
-            let track = this.parseTrack(tracks[t], bpm, beat, totalDuration);
-            if (track.notes.length == 1 && track.notes[0].charAt(0) == "R") continue;
-
+        parsed.forEach(track => {
             switch (target) {
                 case "microbit": {
-                    output += "//Instrument: " + track.instrument + "\n";
+                    output += "// Instrument: " + track.instrument + "\n";
                     output += "music.beginMelody(['" + track.notes.join("', '") + "']);\n";
                     break;
                 }
                 case "adafruit": {
-                    output += "//Instrument: " + track.instrument + "\n";
+                    output += "// Instrument: " + track.instrument + "\n";
                     output += "music.playSoundUntilDone('" + track.notes.join(" ") + "');\n";
                     break;
                 }
@@ -121,7 +129,8 @@ export class App extends React.Component<{}, AppState> {
                     output += "    new music.Melody('" + track.notes.join(" ") + "'),\n"
                 }
             }
-        }
+        });
+
         if (target == "arcade") {
             output += `];
 
@@ -130,13 +139,74 @@ function runMusic() {
 }
 
 runMusic();`;
+            this.outputMixer(parsed, extensionId);
         }
 
         return output;
     }
 
+    outputMixer(tracks: Track[], extensionId: string) {
+        let output = `
+enum SongList {
+    //% block="ExampleSong"
+    EXAMPLESONG,
+}
+namespace music {
+    class Song {
+        tracks: Melody[];
+
+        constructor(tracks: Melody[]) {
+            this.tracks = tracks;
+        }
+
+        play() {
+            this.tracks.forEach(t => t.playUntilDone());
+        }
+
+        stop() {
+            this.tracks.forEach(t => t.stop());
+        }
+    }
+
+    let songs: Song[] = [];
+
+    /**
+     * Play the given song
+     */
+    //% weight=100
+    //% blockId="miditoneplaysong" block="play song %id"
+    export function playSong(id: SongList) {
+        if (songs[id]) songs[id].play();
+    }
+
+    /**
+     * Stops the given song
+     */
+    //% weight=99
+    //% blockId="miditonestopsong" block="stop song %id"
+    export function stopSong(id: SongList) {
+        if (songs[id]) songs[id].stop();
+    }
+
+    songs[SongList.EXAMPLESONG] = new Song([
+        ${ tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n")}
+    ]);
+}
+`
+        window.parent.postMessage({
+            id: Math.random().toString(),
+            type: "pxtpkgext",
+            action: "extwritecode",
+            extId: extensionId,
+            body: {
+                code: output,
+                json: JSON.stringify(tracks)
+            }
+        }, "*");
+    }
+
     parseTrack(track: any, bpm: number, beat: number, totalDuration: number) {
-        var notes = track.notes; // mainTrack.notes;
+        var notes = track.notes;
         // Resolve conflicts
         // If they overlap in time, the highest one wins
         // We'll need time and duration for that one.
