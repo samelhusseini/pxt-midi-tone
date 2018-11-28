@@ -1,10 +1,16 @@
-
 {
     "compilerOptions": {
-        "target": "es5",
-        "noImplicitAny": true,
-        "outDir": "built",
-        "rootDir": "."
+      "allowSyntheticDefaultImports": true,
+      "jsx": "react",
+      "module": "commonjs",
+      "noImplicitAny": true,
+      "outDir": "./dist/",
+      "preserveConstEnums": true,
+      "removeComments": true,
+      "sourceMap": true,
+      "target": "es5"
     },
-    "exclude": ["pxt_modules/**/*test.ts"]
-}
+    "include": [
+      "./src/**/**/*"
+    ]
+  }
