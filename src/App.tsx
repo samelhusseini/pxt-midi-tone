@@ -2,7 +2,6 @@
 import * as React from 'react';
 
 import { FileDrop } from './components/FileDrop';
-import { Track } from './components/Track';
 
 export interface AppState {
     target?: string;
