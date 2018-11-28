@@ -10,6 +10,7 @@ export interface AppState {
     hasFileSupport?: boolean;
     partsData?: any;
     extensionId?: string;
+    songs?: Song[];
 }
 
 interface Track {
@@ -35,7 +36,8 @@ export class App extends React.Component<{}, AppState> {
             target: this.getDefaultTarget(),
             hasFileSupport: this.isSupported(),
             extensionId: this.isIFrame() ? window.location.hash.substr(1) : undefined,
-            hideTarget: this.isIFrame()
+            hideTarget: this.isIFrame(),
+            songs: []
         }
 
         this.parseFile = this.parseFile.bind(this);
@@ -102,7 +104,7 @@ export class App extends React.Component<{}, AppState> {
     }
 
     getResults() {
-        const { target, partsData: data, extensionId } = this.state;
+        const { target, partsData: data, extensionId, songs } = this.state;
 
         let tracks: Track[] = data.tracks;
         let bpm = data.header.bpm;
@@ -115,8 +117,18 @@ export class App extends React.Component<{}, AppState> {
             if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
         }
 
+        const id = "EXAMPLESONG";
+        const title = "Example Song";
+        // if (!songs.some(song => id == song.id)) { // for some reason the file was getting uploaded twice; check on this
+            songs.push({
+                id: id,
+                title: title,
+                tracks: parsed
+            })
+        // }
+
         if (target == "arcade") {
-            return this.outputMixer(parsed, extensionId);
+            return this.outputMixer();
         } else if (target == "json") {
             return JSON.stringify(data, undefined, 2);
         }
@@ -141,11 +153,12 @@ export class App extends React.Component<{}, AppState> {
         return output;
     }
 
-    outputMixer(tracks: Track[], extensionId: string) {
+    outputMixer() {
+        const { extensionId, songs } = this.state
         let output = `// Auto-generated. Do not edit.
 enum SongList {
-    //% block="ExampleSong"
-    EXAMPLESONG,
+    ${ songs.map(song => `//%block="${ song.title }"
+    ${ song.id },`).join("\n    ") }
 }
 
 namespace music {
@@ -184,10 +197,11 @@ namespace music {
     export function stopSong(id: SongList) {
         if (songs[id]) songs[id].stop();
     }
-
-    songs[SongList.EXAMPLESONG] = new Song([
-        ${ tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n        ") }
+    ${ songs.map(song => `
+    songs[${ song.id }] = new Song([
+        ${ song.tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n        ") }
     ]);
+`)}
 }
 // Auto-generated. Do not edit. Really.
 `
@@ -198,7 +212,7 @@ namespace music {
             extId: extensionId,
             body: {
                 code: output,
-                json: JSON.stringify(tracks)
+                json: JSON.stringify(songs)
             }
         }, "*");
         console.log(output);
