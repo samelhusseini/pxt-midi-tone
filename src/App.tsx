@@ -147,40 +147,43 @@ export class App extends React.Component<{}, AppState> {
     }
 
     getResults() {
-        const { target, partsData: data, songs } = this.state;
+        const { target, partsData: data, extensionId, songs } = this.state;
 
-        if (target == "arcade") {
-            return this.outputMixer();
-        } else if (target == "json") {
+        if (target == "json") {
             return JSON.stringify(data, undefined, 2);
         }
-
+        
         let output = "";
+        switch (target) {
+            case "arcade": {
+                output = this.outputMixer(songs);
+                break;
+            }
+            case "adafruit": {
+                output = this.outputAdafruit(songs);
+                break;
+            }
+            case "microbit": {
+                output = this.outputMicrobit(songs);
+            }
+        }
 
-        songs.forEach(song => {
-            output += "// " + song.title + "\n";
-            song.tracks.forEach(track => {
-                switch (target) {
-                    case "microbit": {
-                        output += "// Instrument: " + track.instrument + "\n";
-                        output += "music.beginMelody(['" + track.notes.join("', '") + "']);\n";
-                        break;
-                    }
-                    case "adafruit": {
-                        output += "// Instrument: " + track.instrument + "\n";
-                        output += "music.playSoundUntilDone('" + track.notes.join(" ") + "');\n";
-                        break;
-                    }
-                }
-            });
-        });
+        window.parent.postMessage({
+            id: Math.random().toString(),
+            type: "pxtpkgext",
+            action: "extwritecode",
+            extId: extensionId,
+            body: {
+                code: output,
+                json: JSON.stringify(songs)
+            }
+        }, "*");
 
         return output;
     }
 
-    outputMixer() {
-        const { extensionId, songs } = this.state
-        let output = `// Auto-generated. Do not edit.
+    outputMixer(songs: Song[]) {
+        return `// Auto-generated. Do not edit.
 enum SongList {
     ${ songs.map(song => `//% block="${ song.title }"
     ${ song.id },`).join("\n    ") }
@@ -195,7 +198,12 @@ namespace music {
         }
 
         play() {
-            this.tracks.forEach(t => t.playUntilDone());
+            this.tracks.forEach(t => t.play());
+        }
+
+        playTrack(track: number) {
+            if (track >= 0 && track < this.tracks.length)
+                this.tracks[track].play();
         }
 
         stop() {
@@ -215,9 +223,18 @@ namespace music {
     }
 
     /**
-     * Stops the given song
+     * Play the given track of the given song
      */
     //% weight=99
+    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
+    export function playSongTrack(id: SongList, track: number) {
+        if (songs[id]) songs[id].playTrack(track);
+    }
+
+    /**
+     * Stops the given song
+     */
+    //% weight=95
     //% blockId="miditonestopsong" block="stop midi song %id"
     export function stopSong(id: SongList) {
         if (songs[id]) songs[id].stop();
@@ -229,17 +246,128 @@ ${ songs.map(song => `
 }
 // Auto-generated. Do not edit. Really.
 `
-        window.parent.postMessage({
-            id: Math.random().toString(),
-            type: "pxtpkgext",
-            action: "extwritecode",
-            extId: extensionId,
-            body: {
-                code: output,
-                json: JSON.stringify(songs)
+    }
+
+    outputAdafruit(songs: Song[]) {
+        return `// Auto-generated. Do not edit.
+enum SongList {
+    ${ songs.map(song => `//% block="${ song.title }"
+    ${ song.id },`).join("\n    ") }
+}
+
+namespace music {
+    class Song {
+        tracks: string[];
+        private main: number;
+
+        constructor(tracks: string[]) {
+            this.tracks = tracks;
+            this.main = 0;
+            for (let i = 0; i < this.tracks.length; i++) {
+                if (this.tracks[this.main].length < this.tracks[i].length) {
+                    this.main = i;
+                }
             }
-        }, "*");
-        return output;
+        }
+
+        play() {
+            this.playTrack(this.main);
+        }
+
+        playTrack(index: number) {
+            if (index >= 0 && index < this.tracks.length)
+                music.playSoundUntilDone(this.tracks[index]);
+        }
+    }
+
+    let songs: Song[] = [];
+
+    /**
+     * Play the given song
+     */
+    //% weight=100
+    //% blockId="miditoneplaysong" block="play midi song %id"
+    export function playSong(id: SongList) {
+        if (songs[id]) songs[id].play();
+    }
+
+    /**
+     * Play the given track of the given song
+     */
+    //% weight=99
+    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
+    export function playSongTrack(id: SongList, track: number) {
+        if (songs[id]) songs[id].playTrack(track);
+    }
+
+${ songs.map(song => `
+    songs[SongList.${ song.id }] = new Song([
+        ${ song.tracks.map(track => `'${ track.notes.join(" ") }',`).join("\n        ") }
+    ]);`).join("\n")}
+}
+// Auto-generated. Do not edit. Really.
+`
+    }
+
+    outputMicrobit(songs: Song[]) {
+        return `// Auto-generated. Do not edit.
+enum SongList {
+    ${ songs.map(song => `//% block="${ song.title }"
+    ${ song.id },`).join("\n    ") }
+}
+
+namespace music {
+    class Song {
+        tracks: string[][];
+        private main: number;
+
+        constructor(tracks: string[][]) {
+            this.tracks = tracks;
+            this.main = 0;
+            for (let i = 0; i < this.tracks.length; i++) {
+                if (this.tracks[this.main].length < this.tracks[i].length) {
+                    this.main = i;
+                }
+            }
+        }
+
+        play() {
+            this.playTrack(this.main);
+        }
+
+        playTrack(index: number) {
+            if (index >= 0 && index < this.tracks.length)
+                music.beginMelody(this.tracks[index]);
+        }
+    }
+
+    let songs: Song[] = [];
+
+    /**
+     * Play the given song
+     */
+    //% weight=100
+    //% blockId="miditoneplaysong" block="play midi song %id"
+    export function playSong(id: SongList) {
+        if (songs[id]) songs[id].play();
+    }
+
+    /**
+     * Play the given track of the given song
+     */
+    //% weight=99
+    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
+    export function playSongTrack(id: SongList, track: number) {
+        if (songs[id]) songs[id].playTrack(track);
+    }
+
+${ songs.map(song => `
+    songs[SongList.${ song.id }] = new Song([
+        ${ song.tracks.map(track => `['${ track.notes.join("', '") }'],`).join("\n        ") }
+    ]);`).join("\n")}
+}
+// Auto-generated. Do not edit. Really.
+`
     }
 
     parseTrack(track: any, bpm: number, beat: number, totalDuration: number): Track {
