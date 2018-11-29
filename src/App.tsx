@@ -93,39 +93,45 @@ export class App extends React.Component<{}, AppState> {
         }
     }
 
-    parseFile(file: any) {
-        //read the file
+    parseFile(file: File) {
         let reader = new FileReader();
         reader.onload = (e: any) => {
-            var partsData = MidiConvert.parse(e.target.result);
-            this.setState({ partsData });
+            const data = MidiConvert.parse(e.target.result);
+            const songs = this.state.songs;
+
+            let tracks: Track[] = data.tracks;
+            let bpm = data.header.bpm;
+            let beat = (60 / bpm) / 4; // in ms
+            let totalDuration = data.duration;
+
+            // Parse the tracks
+            let parsed: Track[] = [];
+            for (let t = 0; t < tracks.length; t++) {
+                let track = this.parseTrack(tracks[t], bpm, beat, totalDuration);
+                if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
+            }
+            
+            // Rename any conflicting IDs
+            const title = file.name.split('.')[0]; // trim extension
+            const id = title.replace(/[^a-z]/gi, "");
+            let renameCount = 1;
+            while (songs.some(song => id + (renameCount == 1 ? "" : renameCount) == song.id)) {
+                renameCount++;
+            }
+            const suffix = renameCount == 1 ? "" : renameCount;
+            songs.push({
+                id: id + suffix,
+                title: title + suffix,
+                tracks: parsed
+            });
+
+            this.setState({ partsData: data });
         };
         reader.readAsBinaryString(file);
     }
 
     getResults() {
-        const { target, partsData: data, extensionId, songs } = this.state;
-
-        let tracks: Track[] = data.tracks;
-        let bpm = data.header.bpm;
-        let beat = (60 / bpm) / 4; // in ms
-        let totalDuration = data.duration;
-
-        let parsed: Track[] = [];
-        for (let t = 0; t < tracks.length; t++) {
-            let track = this.parseTrack(tracks[t], bpm, beat, totalDuration);
-            if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
-        }
-
-        const id = "EXAMPLESONG";
-        const title = "Example Song";
-        // if (!songs.some(song => id == song.id)) { // for some reason the file was getting uploaded twice; check on this
-            songs.push({
-                id: id,
-                title: title,
-                tracks: parsed
-            })
-        // }
+        const { target, partsData: data, songs } = this.state;
 
         if (target == "arcade") {
             return this.outputMixer();
@@ -135,19 +141,22 @@ export class App extends React.Component<{}, AppState> {
 
         let output = "";
 
-        parsed.forEach(track => {
-            switch (target) {
-                case "microbit": {
-                    output += "// Instrument: " + track.instrument + "\n";
-                    output += "music.beginMelody(['" + track.notes.join("', '") + "']);\n";
-                    break;
+        songs.forEach(song => {
+            output += "// " + song.title + "\n";
+            song.tracks.forEach(track => {
+                switch (target) {
+                    case "microbit": {
+                        output += "// Instrument: " + track.instrument + "\n";
+                        output += "music.beginMelody(['" + track.notes.join("', '") + "']);\n";
+                        break;
+                    }
+                    case "adafruit": {
+                        output += "// Instrument: " + track.instrument + "\n";
+                        output += "music.playSoundUntilDone('" + track.notes.join(" ") + "');\n";
+                        break;
+                    }
                 }
-                case "adafruit": {
-                    output += "// Instrument: " + track.instrument + "\n";
-                    output += "music.playSoundUntilDone('" + track.notes.join(" ") + "');\n";
-                    break;
-                }
-            }
+            });
         });
 
         return output;
@@ -157,7 +166,7 @@ export class App extends React.Component<{}, AppState> {
         const { extensionId, songs } = this.state
         let output = `// Auto-generated. Do not edit.
 enum SongList {
-    ${ songs.map(song => `//%block="${ song.title }"
+    ${ songs.map(song => `//% block="${ song.title }"
     ${ song.id },`).join("\n    ") }
 }
 
@@ -197,11 +206,10 @@ namespace music {
     export function stopSong(id: SongList) {
         if (songs[id]) songs[id].stop();
     }
-    ${ songs.map(song => `
-    songs[${ song.id }] = new Song([
+${ songs.map(song => `
+    songs[SongList.${ song.id }] = new Song([
         ${ song.tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n        ") }
-    ]);
-`)}
+    ]);`).join("\n")}
 }
 // Auto-generated. Do not edit. Really.
 `
@@ -215,7 +223,6 @@ namespace music {
                 json: JSON.stringify(songs)
             }
         }, "*");
-        console.log(output);
         return output;
     }
 
