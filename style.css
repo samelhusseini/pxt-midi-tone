@@ -58,13 +58,60 @@ textarea {
     position: relative;
 }
 
+#Tracks {
+    position: absolute;
+    top: 65px;
+    left: 0;
+    width: 100%;
+    height: calc(66%);
+}
+
+#Tracks .ui.container {
+    overflow: auto;
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+#Tracks .ui.container > div {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: absolute;
+}
+
+#Tracks .ui.segment {
+    height: 100px;
+    background-color: #0984e3;
+    margin: 10px;
+    padding: 0 !important;
+}
+#Tracks .ui.segment.selected {
+    box-shadow: 0 0 0 4px #fdcb6e;
+}
+
+#Tracks .ui.segment .name {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    line-height: 10px;
+    color: white;
+    font-weight: bolder;
+    font-size: 16px;
+}
+
+#Tracks .ui.segment .note {
+    fill: #aad3fc;
+}
+
 #Results {
     position: absolute;
-    top: 75px;
+    top: calc(65% + 85px);
     left: 10px;
     bottom: 10px;
     width: calc(100% - 20px);
-    height: calc(100% - 85px);
+    height: calc(35% - 95px);
 }
 
 #Description {
