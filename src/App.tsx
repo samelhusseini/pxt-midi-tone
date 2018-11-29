@@ -1,33 +1,37 @@
+/// <reference path="./midi-tone.d.ts" />
+/// <reference path="./midi-convert.d.ts" />
 
 import * as React from 'react';
-import { Menu, Dropdown } from 'semantic-ui-react'
+import { Menu, Dropdown, Modal, Button } from 'semantic-ui-react'
 
 import { FileDrop } from './components/FileDrop';
+import { Tracks } from './components/Tracks';
+
+import { AbstractEmitter } from './exporter/abstract';
+import { MixerEmitter } from './exporter/mixer';
+import { MicrobitEmitter } from './exporter/microbit';
+import { AdafruitEmitter } from './exporter/adafruit';
+
+import { parseTracks } from "./parser";
+import { Player } from "./player";
 
 export interface AppState {
     target?: string;
     hideTarget?: boolean;
     hasFileSupport?: boolean;
-    partsData?: any;
+    partsData?: MidiData;
     extensionId?: string;
     songs?: Song[];
-}
-
-interface Track {
-    notes: string[];
-    instrument: string;
-}
-
-interface Song {
-    id: string;
-    title: string;
-    tracks: Track[];
+    selectedTrack?: number;
+    isImporting?: boolean;
 }
 
 declare let MidiConvert: any;
 declare let window: any;
 
 export class App extends React.Component<{}, AppState> {
+
+    private player: Player;
 
     constructor(props: {}) {
         super(props);
@@ -42,7 +46,7 @@ export class App extends React.Component<{}, AppState> {
 
         if (this.isIFrame()) {
             window.parent.postMessage({
-                id:  Math.random().toString(),
+                id: Math.random().toString(),
                 type: "pxtpkgext",
                 action: "extreadcode",
                 extId: this.state.extensionId,
@@ -53,6 +57,9 @@ export class App extends React.Component<{}, AppState> {
         this.parseFile = this.parseFile.bind(this);
         this.onTargetChange = this.onTargetChange.bind(this);
         this.getResults = this.getResults.bind(this);
+
+        this.beginImport = this.beginImport.bind(this);
+        this.handleTrackClick = this.handleTrackClick.bind(this);
     }
 
     isSupported() {
@@ -101,6 +108,7 @@ export class App extends React.Component<{}, AppState> {
                 this.setState({ target });
                 break;
             }
+            case "extwritecode": break;
             // case "extreadcode": {
             default: { // TODO: the docs for this are a bit off, and no way to identify this type beyond id is returned
                 // Loaded songs
@@ -112,21 +120,12 @@ export class App extends React.Component<{}, AppState> {
     parseFile(file: File) {
         let reader = new FileReader();
         reader.onload = (e: any) => {
-            const data = MidiConvert.parse(e.target.result);
+            const data = MidiConvert.parse(e.target.result) as MidiData;
             const songs = this.state.songs;
 
-            let tracks: Track[] = data.tracks;
-            let bpm = data.header.bpm;
-            let beat = (60 / bpm) / 4; // in ms
-            let totalDuration = data.duration;
-
             // Parse the tracks
-            let parsed: Track[] = [];
-            for (let t = 0; t < tracks.length; t++) {
-                let track = this.parseTrack(tracks[t], bpm, beat, totalDuration);
-                if (!(track.notes.length == 1 && track.notes[0].charAt(0) == "R")) parsed.push(track);
-            }
-            
+            const parsed: Track[] = parseTracks(data);
+
             // Rename any conflicting IDs
             const title = file.name.split('.')[0]; // trim extension
             const id = title.replace(/[^a-z]/gi, "");
@@ -144,6 +143,8 @@ export class App extends React.Component<{}, AppState> {
             this.setState({ partsData: data });
         };
         reader.readAsBinaryString(file);
+
+        this.setState({ isImporting: false });
     }
 
     getResults() {
@@ -152,21 +153,23 @@ export class App extends React.Component<{}, AppState> {
         if (target == "json") {
             return JSON.stringify(data, undefined, 2);
         }
-        
-        let output = "";
+
+        let emitter: AbstractEmitter;
         switch (target) {
             case "arcade": {
-                output = this.outputMixer(songs);
+                emitter = new MixerEmitter();
                 break;
             }
             case "adafruit": {
-                output = this.outputAdafruit(songs);
+                emitter = new AdafruitEmitter();
                 break;
             }
             case "microbit": {
-                output = this.outputMicrobit(songs);
+                emitter = new MicrobitEmitter();
             }
         }
+
+        const output = emitter.output(songs);
 
         window.parent.postMessage({
             id: Math.random().toString(),
@@ -182,212 +185,26 @@ export class App extends React.Component<{}, AppState> {
         return output;
     }
 
-    outputHeader(songs: Song[]) {
-        return `// Auto-generated. Do not edit.
-enum SongList {
-    ${ songs.map(song => `//% block="${ song.title }"
-    ${ song.id },`).join("\n    ") }
-}
-
-namespace music {
-    class Song {`;
+    beginImport() {
+        this.setState({ isImporting: true });
     }
 
-    outputFunctions() {
-        return `
-    let songs: Song[] = [];
+    private midiPart: any;
 
-    /**
-     * Play the given song
-     */
-    //% weight=100
-    //% blockId="miditoneplaysong" block="play midi song %id"
-    export function playSong(id: SongList) {
-        if (songs[id]) songs[id].play();
+    handleTrackClick(index: number) {
+        if (this.player) this.player.dispose();
+
+        if (this.state.selectedTrack == index) index = undefined;
+        this.setState({ selectedTrack: index });
+
+        if (!index) return;
+
+        this.player = new Player(this.state.partsData);
+        this.player.play(index);
     }
-
-    /**
-     * Play the given track of the given song
-     */
-    //% weight=99
-    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
-    export function playSongTrack(id: SongList, track: number) {
-        if (songs[id]) songs[id].playTrack(track);
-    }`
-    }
-
-    outputSongs(songs: Song[], trackFormat: (t: Track) => string) {
-        return `
-    ${ songs.map(song => `
-    songs[SongList.${ song.id }] = new Song([
-        ${ song.tracks.map(trackFormat).join("\n        ") }
-    ]);`).join("\n")}
-}
-// Auto-generated. Do not edit. Really.`
-    }
-
-    outputMixer(songs: Song[]) {
-        return this.outputHeader(songs) + `
-        tracks: Melody[];
-
-        constructor(tracks: Melody[]) {
-            this.tracks = tracks;
-        }
-
-        play() {
-            this.tracks.forEach(t => t.play());
-        }
-
-        playTrack(track: number) {
-            if (track >= 0 && track < this.tracks.length)
-                this.tracks[track].play();
-        }
-
-        stop() {
-            this.tracks.forEach(t => t.stop());
-        }
-    }
-` + this.outputFunctions() + `
-
-    /**
-    * Stops the given song
-    */
-    //% weight=95
-    //% blockId="miditonestopsong" block="stop midi song %id"
-    export function stopSong(id: SongList) {
-        if (songs[id]) songs[id].stop();
-    }` + this.outputSongs(songs, track => `new Melody('${ track.notes.join(" ") }'),`);
-    }
-
-    outputAdafruit(songs: Song[]) {
-        return this.outputHeader(songs) + `
-        tracks: string[];
-        private main: number;
-
-        constructor(tracks: string[]) {
-            this.tracks = tracks;
-            this.main = 0;
-            for (let i = 0; i < this.tracks.length; i++) {
-                if (this.tracks[this.main].length < this.tracks[i].length) {
-                    this.main = i;
-                }
-            }
-        }
-
-        play() {
-            this.playTrack(this.main);
-        }
-
-        playTrack(index: number) {
-            if (index >= 0 && index < this.tracks.length)
-                music.playSoundUntilDone(this.tracks[index]);
-        }
-    }
-` + this.outputFunctions() + this.outputSongs(songs, track => `'${ track.notes.join(" ") }',`);
-    }
-
-    outputMicrobit(songs: Song[]) {
-        return this.outputHeader(songs) + `
-        tracks: string[][];
-        private main: number;
-
-        constructor(tracks: string[][]) {
-            this.tracks = tracks;
-            this.main = 0;
-            for (let i = 0; i < this.tracks.length; i++) {
-                if (this.tracks[this.main].length < this.tracks[i].length) {
-                    this.main = i;
-                }
-            }
-        }
-
-        play() {
-            this.playTrack(this.main);
-        }
-
-        playTrack(index: number) {
-            if (index >= 0 && index < this.tracks.length)
-                music.beginMelody(this.tracks[index]);
-        }
-    }
-    ` + this.outputFunctions() + this.outputSongs(songs, track => `['${ track.notes.join("', '") }'],`);
-    }
-
-    parseTrack(track: any, bpm: number, beat: number, totalDuration: number): Track {
-        var notes = track.notes;
-        // Resolve conflicts
-        // If they overlap in time, the highest one wins
-        // We'll need time and duration for that one.
-
-        // The minimum time chunk is 1 beat, which is 0.125 seconds
-        // Go through and allocate a note for each beat, or a rest and then we'll go through and join them
-
-        let notesPerBeat: any = [];
-        let x = 0;
-        let i = 0;
-        while (x < totalDuration) {
-            notesPerBeat[i] = 0;
-            x += beat;
-            i++;
-        }
-
-        for (let i = 0; i < notes.length; i++) {
-            var note = notes[i];
-            // Go through and allocate the note to each beat
-
-            var startBeat = Math.ceil(note.time / beat);
-            // Use velocity to figure out how long to play the note for.
-            var endBeat = Math.ceil((note.time + note.duration) / beat);
-
-            while (startBeat < endBeat) {
-                if (notesPerBeat[startBeat]) {
-                    var prevMidi = notesPerBeat[startBeat][1];
-                    if (prevMidi < note.midi) {
-                        notesPerBeat[startBeat] = [note.name, note.midi];
-                    }
-                } else {
-                    notesPerBeat[startBeat] = [note.name, note.midi];
-                }
-                startBeat++;
-            }
-        }
-
-        // Now that we've dealt with conflicts, let's go through and join things together, adding rests.
-
-        let retArray = [];
-
-        let currentNote;
-        let currentDuration = 0;
-
-        for (let i = 0; i < notesPerBeat.length; i++) {
-            let note = notesPerBeat[i] ? notesPerBeat[i][0] : 'R';
-            if (!currentNote) {
-                currentNote = note;
-            } else {
-                if (currentNote == note) {
-                    currentDuration++;
-                } else {
-                    // Switching notes, commit the current one and update
-                    retArray.push(currentNote + ":" + (currentDuration));
-                    currentNote = note;
-                    currentDuration = 0;
-                }
-            }
-        }
-
-        if (currentDuration) {
-            retArray.push(currentNote + ":" + currentDuration);
-        }
-
-        return {
-            notes: retArray,
-            instrument: track.instrument
-        }
-    }
-
 
     render() {
-        const { target, hideTarget, partsData, hasFileSupport } = this.state;
+        const { target, hideTarget, partsData, selectedTrack, hasFileSupport } = this.state;
 
         const targetOptions = [{
             text: 'micro:bit',
@@ -411,10 +228,17 @@ namespace music {
                         {partsData ?
                             <div>
                                 <Menu fixed="top">
+                                    <Menu.Item>
+                                        <Button onClick={this.beginImport}>Import</Button>
+                                    </Menu.Item>
                                     {!hideTarget ? <Menu.Item name='targetselector'>
                                         <Dropdown placeholder='Target' fluid selection defaultValue={target} options={targetOptions} onChange={this.onTargetChange} />
                                     </Menu.Item> : undefined}
+                                    <Menu.Menu position="right">
+
+                                    </Menu.Menu>
                                 </Menu>
+                                <Tracks data={partsData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
                                 <div id="Results">
                                     <textarea id="ResultsText" value={this.getResults()}></textarea>
                                 </div>
@@ -422,6 +246,11 @@ namespace music {
                             <FileDrop parseFile={this.parseFile} />}
                     </div>
                 }
+                <Modal open={this.state.isImporting}>
+                    <Modal.Content style={{ height: '300px' }}>
+                        <FileDrop parseFile={this.parseFile} />
+                    </Modal.Content>
+                </Modal>
             </div>
         );
     }
