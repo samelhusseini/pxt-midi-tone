@@ -28,7 +28,9 @@ export class Player {
     }
 
     dispose() {
-        this.midiPart.stop();
-        this.midiPart = undefined;
+        if (this.midiPart) {
+            this.midiPart.stop();
+            this.midiPart = undefined;
+        }
     }
 }
