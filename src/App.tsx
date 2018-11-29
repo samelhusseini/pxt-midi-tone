@@ -105,7 +105,6 @@ export class App extends React.Component<{}, AppState> {
             default: { // TODO: the docs for this are a bit off, and no way to identify this type beyond id is returned
                 // Loaded songs
                 this.setState({ songs: JSON.parse(resp.resp.json) });
-                console.log("Got here!");
             }
         }
     }
