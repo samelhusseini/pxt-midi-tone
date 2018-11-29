@@ -40,6 +40,16 @@ export class App extends React.Component<{}, AppState> {
             songs: []
         }
 
+        if (this.isIFrame()) {
+            window.parent.postMessage({
+                id:  Math.random().toString(),
+                type: "pxtpkgext",
+                action: "extreadcode",
+                extId: this.state.extensionId,
+                response: true
+            }, "*");
+        };
+
         this.parseFile = this.parseFile.bind(this);
         this.onTargetChange = this.onTargetChange.bind(this);
         this.getResults = this.getResults.bind(this);
@@ -86,10 +96,17 @@ export class App extends React.Component<{}, AppState> {
         console.log(resp);
         const target = resp.target;
         switch (resp.event) {
-            case "extloaded":
+            case "extloaded": {
                 // Loaded, set the target
-                this.setState({ target })
+                this.setState({ target });
                 break;
+            }
+            // case "extreadcode": {
+            default: { // TODO: the docs for this are a bit off, and no way to identify this type beyond id is returned
+                // Loaded songs
+                this.setState({ songs: JSON.parse(resp.resp.json) });
+                console.log("Got here!");
+            }
         }
     }
 
@@ -193,7 +210,7 @@ namespace music {
      * Play the given song
      */
     //% weight=100
-    //% blockId="miditoneplaysong" block="play song %id"
+    //% blockId="miditoneplaysong" block="play midi song %id"
     export function playSong(id: SongList) {
         if (songs[id]) songs[id].play();
     }
@@ -202,7 +219,7 @@ namespace music {
      * Stops the given song
      */
     //% weight=99
-    //% blockId="miditonestopsong" block="stop song %id"
+    //% blockId="miditonestopsong" block="stop midi song %id"
     export function stopSong(id: SongList) {
         if (songs[id]) songs[id].stop();
     }
