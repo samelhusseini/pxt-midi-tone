@@ -7,8 +7,7 @@
         "core": "*"
     },
     "files": [
-        "README.md",
-        "midi-tone.ts"
+        "README.md"
     ],
     "testFiles": [
         "test.ts"
