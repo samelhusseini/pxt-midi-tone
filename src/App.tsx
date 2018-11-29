@@ -182,7 +182,7 @@ export class App extends React.Component<{}, AppState> {
         return output;
     }
 
-    outputMixer(songs: Song[]) {
+    outputHeader(songs: Song[]) {
         return `// Auto-generated. Do not edit.
 enum SongList {
     ${ songs.map(song => `//% block="${ song.title }"
@@ -190,7 +190,44 @@ enum SongList {
 }
 
 namespace music {
-    class Song {
+    class Song {`;
+    }
+
+    outputFunctions() {
+        return `
+    let songs: Song[] = [];
+
+    /**
+     * Play the given song
+     */
+    //% weight=100
+    //% blockId="miditoneplaysong" block="play midi song %id"
+    export function playSong(id: SongList) {
+        if (songs[id]) songs[id].play();
+    }
+
+    /**
+     * Play the given track of the given song
+     */
+    //% weight=99
+    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
+    export function playSongTrack(id: SongList, track: number) {
+        if (songs[id]) songs[id].playTrack(track);
+    }`
+    }
+
+    outputSongs(songs: Song[], trackFormat: (t: Track) => string) {
+        return `
+    ${ songs.map(song => `
+    songs[SongList.${ song.id }] = new Song([
+        ${ song.tracks.map(trackFormat).join("\n        ") }
+    ]);`).join("\n")}
+}
+// Auto-generated. Do not edit. Really.`
+    }
+
+    outputMixer(songs: Song[]) {
+        return this.outputHeader(songs) + `
         tracks: Melody[];
 
         constructor(tracks: Melody[]) {
@@ -210,53 +247,20 @@ namespace music {
             this.tracks.forEach(t => t.stop());
         }
     }
-
-    let songs: Song[] = [];
-
-    /**
-     * Play the given song
-     */
-    //% weight=100
-    //% blockId="miditoneplaysong" block="play midi song %id"
-    export function playSong(id: SongList) {
-        if (songs[id]) songs[id].play();
-    }
+` + this.outputFunctions() + `
 
     /**
-     * Play the given track of the given song
-     */
-    //% weight=99
-    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
-    export function playSongTrack(id: SongList, track: number) {
-        if (songs[id]) songs[id].playTrack(track);
-    }
-
-    /**
-     * Stops the given song
-     */
+    * Stops the given song
+    */
     //% weight=95
     //% blockId="miditonestopsong" block="stop midi song %id"
     export function stopSong(id: SongList) {
         if (songs[id]) songs[id].stop();
-    }
-${ songs.map(song => `
-    songs[SongList.${ song.id }] = new Song([
-        ${ song.tracks.map(track => `new Melody('${ track.notes.join(" ") }'),`).join("\n        ") }
-    ]);`).join("\n")}
-}
-// Auto-generated. Do not edit. Really.
-`
+    }` + this.outputSongs(songs, track => `new Melody('${ track.notes.join(" ") }'),`);
     }
 
     outputAdafruit(songs: Song[]) {
-        return `// Auto-generated. Do not edit.
-enum SongList {
-    ${ songs.map(song => `//% block="${ song.title }"
-    ${ song.id },`).join("\n    ") }
-}
-
-namespace music {
-    class Song {
+        return this.outputHeader(songs) + `
         tracks: string[];
         private main: number;
 
@@ -279,45 +283,11 @@ namespace music {
                 music.playSoundUntilDone(this.tracks[index]);
         }
     }
-
-    let songs: Song[] = [];
-
-    /**
-     * Play the given song
-     */
-    //% weight=100
-    //% blockId="miditoneplaysong" block="play midi song %id"
-    export function playSong(id: SongList) {
-        if (songs[id]) songs[id].play();
-    }
-
-    /**
-     * Play the given track of the given song
-     */
-    //% weight=99
-    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
-    export function playSongTrack(id: SongList, track: number) {
-        if (songs[id]) songs[id].playTrack(track);
-    }
-
-${ songs.map(song => `
-    songs[SongList.${ song.id }] = new Song([
-        ${ song.tracks.map(track => `'${ track.notes.join(" ") }',`).join("\n        ") }
-    ]);`).join("\n")}
-}
-// Auto-generated. Do not edit. Really.
-`
+` + this.outputFunctions() + this.outputSongs(songs, track => `'${ track.notes.join(" ") }',`);
     }
 
     outputMicrobit(songs: Song[]) {
-        return `// Auto-generated. Do not edit.
-enum SongList {
-    ${ songs.map(song => `//% block="${ song.title }"
-    ${ song.id },`).join("\n    ") }
-}
-
-namespace music {
-    class Song {
+        return this.outputHeader(songs) + `
         tracks: string[][];
         private main: number;
 
@@ -340,34 +310,7 @@ namespace music {
                 music.beginMelody(this.tracks[index]);
         }
     }
-
-    let songs: Song[] = [];
-
-    /**
-     * Play the given song
-     */
-    //% weight=100
-    //% blockId="miditoneplaysong" block="play midi song %id"
-    export function playSong(id: SongList) {
-        if (songs[id]) songs[id].play();
-    }
-
-    /**
-     * Play the given track of the given song
-     */
-    //% weight=99
-    //% blockId="miditoneplaysongtrack" block="play midi song %id track number %track"
-    export function playSongTrack(id: SongList, track: number) {
-        if (songs[id]) songs[id].playTrack(track);
-    }
-
-${ songs.map(song => `
-    songs[SongList.${ song.id }] = new Song([
-        ${ song.tracks.map(track => `['${ track.notes.join("', '") }'],`).join("\n        ") }
-    ]);`).join("\n")}
-}
-// Auto-generated. Do not edit. Really.
-`
+    ` + this.outputFunctions() + this.outputSongs(songs, track => `['${ track.notes.join("', '") }'],`);
     }
 
     parseTrack(track: any, bpm: number, beat: number, totalDuration: number): Track {
