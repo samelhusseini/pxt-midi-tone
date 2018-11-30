@@ -4,7 +4,7 @@ import * as React from 'react';
 import { App } from './App';
 import { pxt } from './lib/pxtextensions';
 
-import { PXTClient } from './lib/pxtclient';
+import { PXTClient } from './lib/pxtextensions';
 
 export interface PXTExtensionState {
     target?: string;

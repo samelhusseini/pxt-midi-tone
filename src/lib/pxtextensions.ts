@@ -1,7 +1,15 @@
 
-import { PXTClient } from './pxtclient';
+import * as EventEmitter from 'eventemitter3';
 
 export namespace pxt.extensions {
+
+    export interface ReadResponse {
+        asm?: string;
+        code?: string;
+        json?: string;
+        jres?: string;
+    }
+
 
     export function inIframe() {
         try {
@@ -146,5 +154,30 @@ export namespace pxt.extensions {
 
     export function getExtensionId() {
         return inIframe() ? window.location.hash.substr(1) : undefined;
+    }
+}
+
+export class PXTClient {
+
+    private eventEmitter: EventEmitter;
+
+    constructor() {
+        this.eventEmitter = new EventEmitter();
+    }
+
+    on(eventName: string, listener: EventEmitter.ListenerFn) {
+        this.eventEmitter.on(eventName, listener);
+    }
+
+    removeEventListener(eventName: string, listener: EventEmitter.ListenerFn) {
+        this.eventEmitter.removeListener(eventName, listener);
+    }
+
+    emit(eventName: string, payload: Object, error = false) {
+        this.eventEmitter.emit(eventName, payload, error);
+    }
+
+    getEventEmitter() {
+        return this.eventEmitter;
     }
 }

@@ -1,23 +1,20 @@
 /// <reference path="./typings/midi-tone.d.ts" />
 /// <reference path="./typings/midi-convert.d.ts" />
-/// <reference path="./typings/pxt-extensions.d.ts" />
 
 import * as React from 'react';
 import { Menu, Dropdown, Modal, Button } from 'semantic-ui-react'
 
 import { FileDrop } from './components/FileDrop';
 import { Tracks } from './components/Tracks';
+import { Songs } from './components/Songs';
 
 import { AbstractEmitter } from './exporter/abstract';
 import { MixerEmitter } from './exporter/mixer';
 import { MicrobitEmitter } from './exporter/microbit';
 import { AdafruitEmitter } from './exporter/adafruit';
 
+import { pxt, PXTClient } from './lib/pxtextensions';
 import { Player } from "./helpers/player";
-import { pxt } from './lib/pxtextensions';
-
-import { PXTClient } from './lib/pxtclient';
-import { Songs } from './components/Songs';
 
 export interface AppProps {
     client: PXTClient;
@@ -62,7 +59,7 @@ export class App extends React.Component<AppProps, AppState> {
         props.client.on('hidden', this.handleHidden);
     }
 
-    handleReadResponse(resp: ReadResponse) {
+    handleReadResponse(resp: pxt.extensions.ReadResponse) {
         if (resp && resp.json && resp.json != ' ') {
             this.setState({ songs: JSON.parse(resp.json), selectedSong: 0 });
         }
