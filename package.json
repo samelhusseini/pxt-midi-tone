@@ -4,9 +4,10 @@
     "description": "A MakeCode extension to convert MIDI files to tones",
     "homepage": "https://samelhusseini.github.io/pxt-midi-tone/",
     "scripts": {
-        "build": "./node_modules/.bin/webpack",
-        "start": "npm run build && webpack-dev-server",
-        "predeploy": "npm run build",
+        "build:dev": "./node_modules/.bin/webpack --mode development --config webpack.dev.config.js",
+        "build:prod": "./node_modules/.bin/webpack --mode production --config webpack.prod.config.js",
+        "start": "npm run build:dev && webpack-dev-server --open --config webpack.dev.config.js",
+        "predeploy": "npm run build:prod",
         "deploy": "gh-pages -d docs"
     },
     "devDependencies": {
