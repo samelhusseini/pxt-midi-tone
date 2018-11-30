@@ -8,10 +8,7 @@ import { FileDrop } from './components/FileDrop';
 import { Tracks } from './components/Tracks';
 import { Songs } from './components/Songs';
 
-import { AbstractEmitter } from './exporter/abstract';
-import { MixerEmitter } from './exporter/mixer';
-import { MicrobitEmitter } from './exporter/microbit';
-import { AdafruitEmitter } from './exporter/adafruit';
+import { EmitterFactory } from './exporter/factory';
 
 import { pxt, PXTClient } from './lib/pxtextensions';
 import { Player } from "./helpers/player";
@@ -126,23 +123,8 @@ export class App extends React.Component<AppProps, AppState> {
     export(songs: Song[]) {
         const { target } = this.state;
 
-        let emitter: AbstractEmitter;
-        switch (target) {
-            case "arcade": {
-                emitter = new MixerEmitter();
-                break;
-            }
-            case "adafruit": {
-                emitter = new AdafruitEmitter();
-                break;
-            }
-            case "microbit": {
-                emitter = new MicrobitEmitter();
-                break;
-            }
-            default:
-                return;
-        }
+        const emitter = EmitterFactory.getEmitter(target);
+        if (!emitter) return;
         const output = emitter.output(songs);
 
         // Write code
