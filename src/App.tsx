@@ -17,6 +17,7 @@ import { Player } from "./helpers/player";
 import { pxt } from './lib/pxtextensions';
 
 import { PXTClient } from './lib/pxtclient';
+import { Songs } from './components/Songs';
 
 export interface AppProps {
     client: PXTClient;
@@ -50,6 +51,7 @@ export class App extends React.Component<AppProps, AppState> {
         this.export = this.export.bind(this);
 
         this.beginImport = this.beginImport.bind(this);
+        this.handleSongClick = this.handleSongClick.bind(this);
         this.handleTrackClick = this.handleTrackClick.bind(this);
         this.handleReadResponse = this.handleReadResponse.bind(this);
         this.getCurrentSong = this.getCurrentSong.bind(this);
@@ -134,7 +136,7 @@ export class App extends React.Component<AppProps, AppState> {
         const output = emitter.output(songs);
 
         // Write code
-        pxt.extensions.write(output, JSON.stringify(songs, function(key, value) {
+        pxt.extensions.write(output, JSON.stringify(songs, function (key, value) {
             // limit precision of floats
             if (typeof value === 'number') {
                 return parseFloat(value.toFixed(2));
@@ -145,6 +147,10 @@ export class App extends React.Component<AppProps, AppState> {
 
     beginImport() {
         this.setState({ isImporting: true });
+    }
+
+    handleSongClick(index: number) {
+        this.setState({ selectedSong: index, selectedTrack: undefined });
     }
 
     handleTrackClick(index: number) {
@@ -168,7 +174,7 @@ export class App extends React.Component<AppProps, AppState> {
     }
 
     render() {
-        const { target, selectedTrack } = this.state;
+        const { target, songs, selectedSong, selectedTrack } = this.state;
 
         const targetOptions = [{
             text: 'micro:bit',
@@ -196,13 +202,14 @@ export class App extends React.Component<AppProps, AppState> {
                                 <Menu.Item>
                                     <Button onClick={this.beginImport}>Import</Button>
                                 </Menu.Item>
-                                {!pxt.extensions.inIframe() ? <Menu.Item name='targetselector'>
+                                {/* {!pxt.extensions.inIframe() ? <Menu.Item name='targetselector'>
                                     <Dropdown placeholder='Target' fluid selection defaultValue={target} options={targetOptions} onChange={this.onTargetChange} />
-                                </Menu.Item> : undefined}
+                                </Menu.Item> : undefined} */}
                                 <Menu.Menu position="right">
 
                                 </Menu.Menu>
                             </Menu>
+                            <Songs songs={songs} selectedSong={selectedSong} handleSelect={this.handleSongClick} />
                             <Tracks data={currentSongData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
                         </div> :
                         <FileDrop parseFile={this.parseFile} />}

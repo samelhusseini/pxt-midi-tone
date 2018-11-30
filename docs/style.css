@@ -50,9 +50,16 @@ textarea {
     position: relative;
 }
 
+#Songs {
+    position: absolute;
+    top: 47px;
+    width: 100%;
+    left: 0;
+}
+
 #Tracks {
     position: absolute;
-    top: 65px;
+    top: 100px;
     left: 0;
     width: 100%;
     height: calc(100% - 65px);

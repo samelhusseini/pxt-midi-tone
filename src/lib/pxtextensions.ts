@@ -42,11 +42,11 @@ export namespace pxt.extensions {
                 default:
                     console.log("Unhandled event", msg);
             }
-            console.log(msg);
+            console.log("received event: ", msg);
             return;
         }
         const action = idToType[msg.id];
-        console.log(action, msg);
+        console.log("received action: " + action, msg);
 
         switch (action) {
             case "extinit":
