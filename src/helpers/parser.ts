@@ -16,7 +16,7 @@ export function parseTracks(data: MidiData): Track[] {
 }
 
 export function parseTrack(track: MidiTrack, bpm: number, beat: number, totalDuration: number): Track {
-    var notes = track.notes;
+    let notes = track.notes;
     // Resolve conflicts
     // If they overlap in time, the highest one wins
     // We'll need time and duration for that one.
@@ -34,16 +34,16 @@ export function parseTrack(track: MidiTrack, bpm: number, beat: number, totalDur
     }
 
     for (let i = 0; i < notes.length; i++) {
-        var note = notes[i];
+        let note = notes[i];
         // Go through and allocate the note to each beat
 
-        var startBeat = Math.ceil(note.time / beat);
+        let startBeat = Math.ceil(note.time / beat);
         // Use velocity to figure out how long to play the note for.
-        var endBeat = Math.ceil((note.time + note.duration) / beat);
+        let endBeat = Math.ceil((note.time + note.duration) / beat);
 
         while (startBeat < endBeat) {
             if (notesPerBeat[startBeat]) {
-                var prevMidi = notesPerBeat[startBeat][1];
+                let prevMidi = notesPerBeat[startBeat][1];
                 if (prevMidi < note.midi) {
                     notesPerBeat[startBeat] = [note.name, note.midi];
                 }

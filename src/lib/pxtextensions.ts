@@ -21,13 +21,6 @@ export namespace pxt.extensions {
         }, false);
     }
 
-    export function init() {
-        if (!inIframe()) return;
-
-        const msg = mkRequest('extinit');
-        window.parent.postMessage(msg, "*");
-    }
-
     function handleMessage(client: PXTClient, msg: any) {
         if (!msg.id) {
             const target = msg.target;
@@ -75,7 +68,16 @@ export namespace pxt.extensions {
         }
     }
 
+    export function init() {
+        console.log("initializing");
+        if (!inIframe()) return;
+
+        const msg = mkRequest('extinit');
+        window.parent.postMessage(msg, "*");
+    }
+
     export function read() {
+        console.log('requesting read code');
         if (!inIframe()) return;
 
         const msg = mkRequest('extreadcode');
@@ -83,6 +85,7 @@ export namespace pxt.extensions {
     }
 
     export function readUser() {
+        console.log('requesting read user code');
         if (!inIframe()) return;
 
         const msg = mkRequest('extusercode');
@@ -90,6 +93,7 @@ export namespace pxt.extensions {
     }
 
     export function write(code: string, json?: string) {
+        console.log('writing code:', code, json);
         if (!inIframe()) return;
 
         const msg: any = mkRequest('extwritecode');

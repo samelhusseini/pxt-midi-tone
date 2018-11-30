@@ -72,8 +72,8 @@ export class App extends React.Component<AppProps, AppState> {
     }
 
     componentDidUpdate(prevProps: AppProps, prevState: AppState) {
-        if (prevState.target != this.state.target) {
-            if (this.state.songs) {
+        if (prevState.target && prevState.target != this.state.target) {
+            if (this.state.songs && this.state.songs.length > 0) {
                 this.export(this.state.songs);
             }
         }
@@ -134,8 +134,13 @@ export class App extends React.Component<AppProps, AppState> {
         const output = emitter.output(songs);
 
         // Write code
-        pxt.extensions.write(output, JSON.stringify(songs))
-        console.log(output);
+        pxt.extensions.write(output, JSON.stringify(songs, function(key, value) {
+            // limit precision of floats
+            if (typeof value === 'number') {
+                return parseFloat(value.toFixed(2));
+            }
+            return value;
+        }));
     }
 
     beginImport() {
