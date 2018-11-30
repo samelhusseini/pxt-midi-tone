@@ -26,6 +26,8 @@ export class PXTExtension extends React.Component<{}, PXTExtensionState> {
         }
 
         this.client = new PXTClient();
+        pxt.extensions.setup(this.client);
+        pxt.extensions.init();
     }
 
     private isSupported() {
@@ -38,7 +40,7 @@ export class PXTExtension extends React.Component<{}, PXTExtensionState> {
             const url = new URL(window.location.href);
             let chosen = url.searchParams.get("target");
             if (chosen) return chosen.toLowerCase();
-            return "microbit"
+            return "arcade"
         }
         return undefined;
     }
@@ -54,34 +56,22 @@ export class PXTExtension extends React.Component<{}, PXTExtensionState> {
     componentDidMount() {
         if (!pxt.extensions.inIframe()) return;
 
-        // Setup the handler
-        pxt.extensions.setup(this.handlePXTResponse);
+        this.client.on('loaded', (target: string) => {
+            this.setState({ target });
+            pxt.extensions.read();
+        })
 
-        // Read code
-        pxt.extensions.requestRead();
-    }
-
-    handlePXTResponse = (resp: any) => {
-        console.log(resp);
-        const target = resp.target;
-        switch (resp.event) {
-            case "extloaded":
-                // Loaded, set the target
-                this.setState({ target })
-                break;
-            case "extwritecode": break;
-            // case "extreadcode": {
-            default: { // TODO: the docs for this are a bit off, and no way to identify this type beyond id is returned
-                this.client.emit('read', resp.resp);
-            }
-        }
+        this.client.on('shown', (target: string) => {
+            this.setState({ target });
+            pxt.extensions.read();
+        })
     }
 
     render() {
         const { target, isSupported } = this.state;
 
         return (
-            <div className={`MCExtension ${!target ? 'dimmable dimmed' : ''}`}>
+            <div className={`PXTExtension ${!target ? 'dimmable dimmed' : ''}`}>
                 {!isSupported ? <div>
                     This extension is not supported on your browser
                 </div> : <App target={target} client={this.client} />}

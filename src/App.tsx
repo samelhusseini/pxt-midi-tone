@@ -57,16 +57,22 @@ export class App extends React.Component<AppProps, AppState> {
     }
 
     handleReadResponse(resp: ReadResponse) {
-        this.setState({ songs: JSON.parse(resp.json) });
+        if (resp && resp.json) {
+            this.setState({ songs: JSON.parse(resp.json) });
+        }
     }
 
     onTargetChange(e: any, { value }: any) {
         this.setState({ target: value });
     }
 
+    componentWillReceiveProps(nextProps: AppProps) {
+        this.setState({ target: nextProps.target });
+    }
+
     componentDidUpdate(prevProps: AppProps, prevState: AppState) {
         if (prevState.target != this.state.target) {
-            this.export();
+            this.export(this.state.partsData, this.state.songs);
         }
     }
 
@@ -93,17 +99,17 @@ export class App extends React.Component<AppProps, AppState> {
                 tracks: parsed
             });
 
-            this.setState({ partsData: data });
+            this.export(data, songs);
+
+            this.setState({ partsData: data, songs });
         };
         reader.readAsBinaryString(file);
 
         this.setState({ isImporting: false });
-
-        this.export();
     }
 
-    export() {
-        const { target, partsData: data, songs } = this.state;
+    export(data: MidiData, songs: Song[]) {
+        const { target } = this.state;
 
         if (target == "json") {
             return JSON.stringify(data, undefined, 2);
