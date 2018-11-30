@@ -59,7 +59,7 @@ export class App extends React.Component<AppProps, AppState> {
 
     handleReadResponse(resp: ReadResponse) {
         if (resp && resp.json) {
-            this.setState({ songs: JSON.parse(resp.json) });
+            this.setState({ songs: JSON.parse(resp.json), selectedSong: 0 });
         }
     }
 
@@ -158,7 +158,7 @@ export class App extends React.Component<AppProps, AppState> {
     getCurrentSong() {
         const { songs, selectedSong } = this.state;
 
-        const hasSelectedSong = !!selectedSong;
+        const hasSelectedSong = selectedSong != undefined;
         return hasSelectedSong && songs.length > 0 ? songs[selectedSong] : undefined;
     }
 
