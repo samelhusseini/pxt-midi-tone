@@ -13,7 +13,7 @@ export namespace pxt.extensions {
 
     export function setup(client: PXTClient) {
         window.addEventListener("message", (ev: any) => {
-            var resp = ev.data;
+            let resp = ev.data;
             if (!resp) return;
 
             if (resp.type === "pxtpkgext")
@@ -129,7 +129,7 @@ export namespace pxt.extensions {
 
     let idToType: { [key: string]: string } = {};
     function mkRequest(action: string) {
-        var id = Math.random().toString();
+        let id = Math.random().toString();
         idToType[id] = action;
         return {
             type: "pxtpkgext",

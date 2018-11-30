@@ -1,4 +1,5 @@
 
+import { parseTracks } from "../helpers/parser";
 
 export abstract class AbstractEmitter implements MCEmitter {
 
@@ -39,10 +40,12 @@ namespace music {
 
     protected outputSongs(songs: Song[], trackFormat: (t: Track) => string) {
         return `
-    ${ songs.map(song => `
+    ${ songs.map(song => {
+        const tracks = parseTracks(song.data);
+        return `
     songs[SongList.${ song.id}] = new Song([
-        ${ song.tracks.map(trackFormat).join("\n        ")}
-    ]);`).join("\n")}
+        ${ tracks.map(trackFormat).join("\n        ")}
+    ]);`}).join("\n")}
 }
 // Auto-generated. Do not edit. Really.`
     }

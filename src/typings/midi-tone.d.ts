@@ -9,7 +9,7 @@ declare interface Track {
 declare interface Song {
     id: string;
     title: string;
-    tracks: Track[];
+    data: MidiData;
 }
 
 declare interface MCEmitter {

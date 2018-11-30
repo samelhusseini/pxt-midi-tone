@@ -13,7 +13,6 @@ import { MixerEmitter } from './exporter/mixer';
 import { MicrobitEmitter } from './exporter/microbit';
 import { AdafruitEmitter } from './exporter/adafruit';
 
-import { parseTracks } from "./helpers/parser";
 import { Player } from "./helpers/player";
 import { pxt } from './lib/pxtextensions';
 
@@ -26,8 +25,8 @@ export interface AppProps {
 
 export interface AppState {
     target?: string;
-    partsData?: MidiData;
     songs?: Song[];
+    selectedSong?: number;
     selectedTrack?: number;
     isImporting?: boolean;
 }
@@ -53,6 +52,7 @@ export class App extends React.Component<AppProps, AppState> {
         this.beginImport = this.beginImport.bind(this);
         this.handleTrackClick = this.handleTrackClick.bind(this);
         this.handleReadResponse = this.handleReadResponse.bind(this);
+        this.getCurrentSong = this.getCurrentSong.bind(this);
 
         props.client.on('read', this.handleReadResponse);
     }
@@ -73,20 +73,19 @@ export class App extends React.Component<AppProps, AppState> {
 
     componentDidUpdate(prevProps: AppProps, prevState: AppState) {
         if (prevState.target != this.state.target) {
-            if (this.state.partsData && this.state.songs) {
-                this.export(this.state.partsData, this.state.songs);
+            if (this.state.songs) {
+                this.export(this.state.songs);
             }
         }
     }
 
     parseFile(file: File) {
+        const { target } = this.state;
+
         let reader = new FileReader();
         reader.onload = (e: any) => {
             const data = MidiConvert.parse(e.target.result) as MidiData;
             const songs = this.state.songs;
-
-            // Parse the tracks
-            const parsed: Track[] = parseTracks(data);
 
             // Rename any conflicting IDs
             const title = file.name.split('.')[0]; // trim extension
@@ -99,24 +98,24 @@ export class App extends React.Component<AppProps, AppState> {
             songs.push({
                 id: id + suffix,
                 title: title + suffix,
-                tracks: parsed
+                data: data
             });
 
-            this.export(data, songs);
+            if (target == "json") {
+                console.log(JSON.stringify(data, undefined, 2));
+            } else {
+                this.export(songs);
+            }
 
-            this.setState({ partsData: data, songs });
+            this.setState({ songs, selectedSong: songs.length - 1 });
         };
-        reader.readAsBinaryString(file);
 
+        reader.readAsBinaryString(file);
         this.setState({ isImporting: false });
     }
 
-    export(data: MidiData, songs: Song[]) {
+    export(songs: Song[]) {
         const { target } = this.state;
-
-        if (target == "json") {
-            return JSON.stringify(data, undefined, 2);
-        }
 
         let emitter: AbstractEmitter;
         switch (target) {
@@ -132,7 +131,6 @@ export class App extends React.Component<AppProps, AppState> {
                 emitter = new MicrobitEmitter();
             }
         }
-
         const output = emitter.output(songs);
 
         // Write code
@@ -152,12 +150,20 @@ export class App extends React.Component<AppProps, AppState> {
 
         if (!index) return;
 
-        this.player = new Player(this.state.partsData);
+        const currentSong = this.getCurrentSong();
+        this.player = new Player(currentSong.data);
         this.player.play(index);
     }
 
+    getCurrentSong() {
+        const { songs, selectedSong } = this.state;
+
+        const hasSelectedSong = !!selectedSong;
+        return hasSelectedSong && songs.length > 0 ? songs[selectedSong] : undefined;
+    }
+
     render() {
-        const { target, partsData, selectedTrack } = this.state;
+        const { target, selectedTrack } = this.state;
 
         const targetOptions = [{
             text: 'micro:bit',
@@ -173,10 +179,13 @@ export class App extends React.Component<AppProps, AppState> {
             value: 'json'
         }]
 
+        const currentSong = this.getCurrentSong();
+        const currentSongData = currentSong ? currentSong.data : undefined;
+
         return (
             <div className="App">
                 <div className="ui text container">
-                    {partsData ?
+                    {currentSongData ?
                         <div>
                             <Menu fixed="top">
                                 <Menu.Item>
@@ -189,7 +198,7 @@ export class App extends React.Component<AppProps, AppState> {
 
                                 </Menu.Menu>
                             </Menu>
-                            <Tracks data={partsData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
+                            <Tracks data={currentSongData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
                         </div> :
                         <FileDrop parseFile={this.parseFile} />}
                 </div>
