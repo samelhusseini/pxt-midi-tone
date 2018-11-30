@@ -1,12 +1,10 @@
 
 const path = require('path'),
-    webpack = require('webpack'),
-    HtmlWebpackPlugin = require('html-webpack-plugin');
+    webpack = require('webpack')
 
 module.exports = {
     entry: {
-        app: ["./src/index.tsx", 'webpack-hot-middleware/client'],
-        vendor: ['react', 'react-dom']
+        app: ["./src/index.tsx"],
     },
     output: {
         path: path.resolve(__dirname, 'docs'),
@@ -31,7 +29,23 @@ module.exports = {
         ]
     },
     plugins: [
-        new HtmlWebpackPlugin({ template: path.resolve(__dirname, 'src', 'index.html') }),
         new webpack.HotModuleReplacementPlugin()
-    ]
+    ],
+    devServer: {
+        contentBase: [
+            path.join(__dirname, 'src'),
+            path.join(__dirname, 'docs'),
+            path.join(__dirname, 'node_modules'),
+        ],
+        hot: true,
+        port: 3000
+    },
+    // When importing a module whose path matches one of the following, just
+    // assume a corresponding global variable exists and use that instead.
+    // This is important because it allows us to avoid bundling all of our
+    // dependencies, which allows browsers to cache those libraries between builds.
+    externals: {
+        "react": "React",
+        "react-dom": "ReactDOM"
+    }
 };
