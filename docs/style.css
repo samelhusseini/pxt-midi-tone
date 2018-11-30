@@ -57,6 +57,14 @@ textarea {
     left: 0;
 }
 
+#Songs .ui.menu {
+    border-radius: 0;
+    box-shadow: none;
+    border-left: none;
+    border-right: none;
+    justify-content: center;
+}
+
 #Tracks {
     position: absolute;
     top: 100px;
