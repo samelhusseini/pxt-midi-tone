@@ -24,7 +24,7 @@ export class Track extends React.Component<TrackProps, {}> {
     }
 
     render() {
-        const { track, selected } = this.props;
+        const { track, index, selected } = this.props;
         let minMidi = 127;
         let maxMidi = 0;
         track.notes.forEach((note: any) => {
@@ -39,8 +39,8 @@ export class Track extends React.Component<TrackProps, {}> {
             <div className="name">{track.instrument || track.name}</div>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 ${width} ${height}`}>
                 <g transform={`translate(0 -${(127 - maxMidi) * scale}) scale(1 ${scale})`}>
-                    {track.notes.map((note: any) =>
-                        <Note note={note} />
+                    {track.notes.map((note: any, nIndex: number) =>
+                        <Note key={`note${index}_${nIndex}`} note={note} />
                     )}
                 </g>
             </svg>

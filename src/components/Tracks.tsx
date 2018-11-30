@@ -29,7 +29,7 @@ export class Tracks extends React.Component<TracksProps, {}> {
                     <div>
                         {data.tracks.map((track: any, index: number) => {
                             return track.notes.length > 0 ?
-                                <Track track={track} index={index} selected={selectedTrack == index} onClick={this.handleTrackClick} /> : undefined
+                                <Track key={`track${index}`} track={track} index={index} selected={selectedTrack == index} onClick={this.handleTrackClick} /> : undefined
                         })}
                     </div>
                 </div>

@@ -56,7 +56,7 @@ export class App extends React.Component<{}, AppState> {
 
         this.parseFile = this.parseFile.bind(this);
         this.onTargetChange = this.onTargetChange.bind(this);
-        this.getResults = this.getResults.bind(this);
+        this.export = this.export.bind(this);
 
         this.beginImport = this.beginImport.bind(this);
         this.handleTrackClick = this.handleTrackClick.bind(this);
@@ -145,9 +145,11 @@ export class App extends React.Component<{}, AppState> {
         reader.readAsBinaryString(file);
 
         this.setState({ isImporting: false });
+
+        this.export();
     }
 
-    getResults() {
+    export() {
         const { target, partsData: data, extensionId, songs } = this.state;
 
         if (target == "json") {
@@ -182,7 +184,7 @@ export class App extends React.Component<{}, AppState> {
             }
         }, "*");
 
-        return output;
+        console.log(output);
     }
 
     beginImport() {
@@ -239,9 +241,6 @@ export class App extends React.Component<{}, AppState> {
                                     </Menu.Menu>
                                 </Menu>
                                 <Tracks data={partsData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
-                                <div id="Results">
-                                    <textarea id="ResultsText" value={this.getResults()}></textarea>
-                                </div>
                             </div> :
                             <FileDrop parseFile={this.parseFile} />}
                     </div>
