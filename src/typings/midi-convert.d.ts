@@ -1,5 +1,5 @@
 
-interface MidiData {
+declare interface MidiData {
     // the transport and timing data
     header: {
         name: string,                     // the name of the first empty track, 
@@ -16,7 +16,7 @@ interface MidiData {
     tracks: MidiTrack[]
 }
 
-interface MidiTrack {
+declare interface MidiTrack {
     id: number,                     // the position of this track in the array
     name: string,                   // the track name if one was given
     notes: MidiNote[],
@@ -49,7 +49,7 @@ interface MidiTrack {
     // MIDI spec
 }
 
-interface MidiNote {
+declare interface MidiNote {
     midi: number,               // midi number, e.g. 60
     time: number,               // time in seconds
     name: string,               // note name, e.g. "C4"

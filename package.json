@@ -11,10 +11,13 @@
         "deploy": "gh-pages -d docs"
     },
     "devDependencies": {
+        "midiconvert": "0.4.7",
+        "eventemitter3": "3.1.0",
+        "gh-pages": "^2.0.1",
+        "express": "^4.16.4",
         "autoprefixer": "9.3.1",
         "awesome-typescript-loader": "^5.2.1",
         "html-webpack-plugin": "^3.2.0",
-        "midiconvert": "0.4.7",
         "source-map-loader": "^0.2.4",
         "ts-loader": "^5.3.1",
         "typescript": "^3.1.6",
@@ -22,11 +25,10 @@
         "webpack-cli": "^3.1.2",
         "webpack-dev-server": "3.1.10",
         "@types/react": "^16.7.7",
-        "@types/react-dom": "^16.0.11"
+        "@types/react-dom": "^16.0.11",
+        "tslint-microsoft-contrib": "5.2.1"
     },
     "dependencies": {
-        "express": "^4.16.4",
-        "gh-pages": "^2.0.1",
         "react": "^16.6.3",
         "react-dom": "^16.6.3",
         "semantic-ui-react": "0.83.0"

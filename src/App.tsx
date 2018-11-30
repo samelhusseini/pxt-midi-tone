@@ -1,5 +1,6 @@
-/// <reference path="./midi-tone.d.ts" />
-/// <reference path="./midi-convert.d.ts" />
+/// <reference path="./typings/midi-tone.d.ts" />
+/// <reference path="./typings/midi-convert.d.ts" />
+/// <reference path="./typings/pxt-extensions.d.ts" />
 
 import * as React from 'react';
 import { Menu, Dropdown, Modal, Button } from 'semantic-ui-react'
@@ -12,47 +13,38 @@ import { MixerEmitter } from './exporter/mixer';
 import { MicrobitEmitter } from './exporter/microbit';
 import { AdafruitEmitter } from './exporter/adafruit';
 
-import { parseTracks } from "./parser";
-import { Player } from "./player";
+import { parseTracks } from "./helpers/parser";
+import { Player } from "./helpers/player";
+import { pxt } from './lib/pxtextensions';
+
+import { PXTClient } from './lib/pxtclient';
+
+export interface AppProps {
+    client: PXTClient;
+    target?: string;
+}
 
 export interface AppState {
     target?: string;
-    hideTarget?: boolean;
-    hasFileSupport?: boolean;
     partsData?: MidiData;
-    extensionId?: string;
     songs?: Song[];
     selectedTrack?: number;
     isImporting?: boolean;
 }
 
 declare let MidiConvert: any;
-declare let window: any;
 
-export class App extends React.Component<{}, AppState> {
+export class App extends React.Component<AppProps, AppState> {
 
     private player: Player;
 
-    constructor(props: {}) {
+    constructor(props: AppProps) {
         super(props);
 
         this.state = {
-            target: this.getDefaultTarget(),
-            hasFileSupport: this.isSupported(),
-            extensionId: this.isIFrame() ? window.location.hash.substr(1) : undefined,
-            hideTarget: this.isIFrame(),
+            target: props.target,
             songs: []
         }
-
-        if (this.isIFrame()) {
-            window.parent.postMessage({
-                id: Math.random().toString(),
-                type: "pxtpkgext",
-                action: "extreadcode",
-                extId: this.state.extensionId,
-                response: true
-            }, "*");
-        };
 
         this.parseFile = this.parseFile.bind(this);
         this.onTargetChange = this.onTargetChange.bind(this);
@@ -60,60 +52,21 @@ export class App extends React.Component<{}, AppState> {
 
         this.beginImport = this.beginImport.bind(this);
         this.handleTrackClick = this.handleTrackClick.bind(this);
+
+        props.client.on('read', this.handleReadResponse);
     }
 
-    isSupported() {
-        return window.File && window.FileReader && window.FileList && window.Blob
-    }
-
-    getDefaultTarget() {
-        if (!this.isIFrame()) {
-            const url = new URL(window.location.href);
-            let chosen = url.searchParams.get("target");
-            if (chosen) return chosen.toLowerCase();
-            return "microbit"
-        }
-        return undefined;
-    }
-
-    isIFrame() {
-        try {
-            return window && window.self !== window.top;
-        } catch (e) {
-            return true;
-        }
+    handleReadResponse(resp: ReadResponse) {
+        this.setState({ songs: JSON.parse(resp.json) });
     }
 
     onTargetChange(e: any, { value }: any) {
         this.setState({ target: value });
     }
 
-    componentDidMount() {
-        window.addEventListener("message", (ev: any) => {
-            var resp = ev.data;
-            if (!resp) return;
-
-            if (resp.type === "pxtpkgext")
-                this.receivedResponse(resp);
-        }, false);
-    }
-
-    // handle the response
-    receivedResponse = (resp: any) => {
-        console.log(resp);
-        const target = resp.target;
-        switch (resp.event) {
-            case "extloaded": {
-                // Loaded, set the target
-                this.setState({ target });
-                break;
-            }
-            case "extwritecode": break;
-            // case "extreadcode": {
-            default: { // TODO: the docs for this are a bit off, and no way to identify this type beyond id is returned
-                // Loaded songs
-                this.setState({ songs: JSON.parse(resp.resp.json) });
-            }
+    componentDidUpdate(prevProps: AppProps, prevState: AppState) {
+        if (prevState.target != this.state.target) {
+            this.export();
         }
     }
 
@@ -150,7 +103,7 @@ export class App extends React.Component<{}, AppState> {
     }
 
     export() {
-        const { target, partsData: data, extensionId, songs } = this.state;
+        const { target, partsData: data, songs } = this.state;
 
         if (target == "json") {
             return JSON.stringify(data, undefined, 2);
@@ -173,25 +126,14 @@ export class App extends React.Component<{}, AppState> {
 
         const output = emitter.output(songs);
 
-        window.parent.postMessage({
-            id: Math.random().toString(),
-            type: "pxtpkgext",
-            action: "extwritecode",
-            extId: extensionId,
-            body: {
-                code: output,
-                json: JSON.stringify(songs)
-            }
-        }, "*");
-
+        // Write code
+        pxt.extensions.write(output, JSON.stringify(songs))
         console.log(output);
     }
 
     beginImport() {
         this.setState({ isImporting: true });
     }
-
-    private midiPart: any;
 
     handleTrackClick(index: number) {
         if (this.player) this.player.dispose();
@@ -206,7 +148,7 @@ export class App extends React.Component<{}, AppState> {
     }
 
     render() {
-        const { target, hideTarget, partsData, selectedTrack, hasFileSupport } = this.state;
+        const { target, partsData, selectedTrack } = this.state;
 
         const targetOptions = [{
             text: 'micro:bit',
@@ -223,28 +165,25 @@ export class App extends React.Component<{}, AppState> {
         }]
 
         return (
-            <div className={`App ${!target ? 'dimmable dimmed' : ''}`}>
-                {!hasFileSupport ?
-                    <div>Reading files not supported by this browser</div> :
-                    <div className="ui text container">
-                        {partsData ?
-                            <div>
-                                <Menu fixed="top">
-                                    <Menu.Item>
-                                        <Button onClick={this.beginImport}>Import</Button>
-                                    </Menu.Item>
-                                    {!hideTarget ? <Menu.Item name='targetselector'>
-                                        <Dropdown placeholder='Target' fluid selection defaultValue={target} options={targetOptions} onChange={this.onTargetChange} />
-                                    </Menu.Item> : undefined}
-                                    <Menu.Menu position="right">
+            <div className="App">
+                <div className="ui text container">
+                    {partsData ?
+                        <div>
+                            <Menu fixed="top">
+                                <Menu.Item>
+                                    <Button onClick={this.beginImport}>Import</Button>
+                                </Menu.Item>
+                                {!pxt.extensions.inIframe() ? <Menu.Item name='targetselector'>
+                                    <Dropdown placeholder='Target' fluid selection defaultValue={target} options={targetOptions} onChange={this.onTargetChange} />
+                                </Menu.Item> : undefined}
+                                <Menu.Menu position="right">
 
-                                    </Menu.Menu>
-                                </Menu>
-                                <Tracks data={partsData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
-                            </div> :
-                            <FileDrop parseFile={this.parseFile} />}
-                    </div>
-                }
+                                </Menu.Menu>
+                            </Menu>
+                            <Tracks data={partsData} selectedTrack={selectedTrack} handleTrackClick={this.handleTrackClick} />
+                        </div> :
+                        <FileDrop parseFile={this.parseFile} />}
+                </div>
                 <Modal open={this.state.isImporting}>
                     <Modal.Content style={{ height: '300px' }}>
                         <FileDrop parseFile={this.parseFile} />

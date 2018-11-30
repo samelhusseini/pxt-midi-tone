@@ -1,17 +1,17 @@
 
 /* Internal, parsed representation of a Song */
 
-interface Track {
+declare interface Track {
     notes: string[];
     instrument: string;
 }
 
-interface Song {
+declare interface Song {
     id: string;
     title: string;
     tracks: Track[];
 }
 
-interface MCEmitter {
+declare interface MCEmitter {
     output: (songs: Song[]) => string;
 }

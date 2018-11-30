@@ -1,12 +1,12 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { App } from './App';
+import { PXTExtension } from './PXTExtension';
 
 declare let module: any
 
 ReactDOM.render(
-    <App />,
+    <PXTExtension />,
     document.getElementById('root') as HTMLElement
 );
 

@@ -64,7 +64,7 @@
 /******/
 /******/ 	var hotApplyOnUpdate = true;
 /******/ 	// eslint-disable-next-line no-unused-vars
-/******/ 	var hotCurrentHash = "c60dd39edbdfead338e7";
+/******/ 	var hotCurrentHash = "9a88d093f7aa6e4ec1a4";
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule;
@@ -1952,6 +1952,354 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	} else {}
 }());
+
+
+/***/ }),
+
+/***/ "./node_modules/eventemitter3/index.js":
+/*!*********************************************!*\
+  !*** ./node_modules/eventemitter3/index.js ***!
+  \*********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var has = Object.prototype.hasOwnProperty
+  , prefix = '~';
+
+/**
+ * Constructor to create a storage for our `EE` objects.
+ * An `Events` instance is a plain object whose properties are event names.
+ *
+ * @constructor
+ * @private
+ */
+function Events() {}
+
+//
+// We try to not inherit from `Object.prototype`. In some engines creating an
+// instance in this way is faster than calling `Object.create(null)` directly.
+// If `Object.create(null)` is not supported we prefix the event names with a
+// character to make sure that the built-in object properties are not
+// overridden or used as an attack vector.
+//
+if (Object.create) {
+  Events.prototype = Object.create(null);
+
+  //
+  // This hack is needed because the `__proto__` property is still inherited in
+  // some old browsers like Android 4, iPhone 5.1, Opera 11 and Safari 5.
+  //
+  if (!new Events().__proto__) prefix = false;
+}
+
+/**
+ * Representation of a single event listener.
+ *
+ * @param {Function} fn The listener function.
+ * @param {*} context The context to invoke the listener with.
+ * @param {Boolean} [once=false] Specify if the listener is a one-time listener.
+ * @constructor
+ * @private
+ */
+function EE(fn, context, once) {
+  this.fn = fn;
+  this.context = context;
+  this.once = once || false;
+}
+
+/**
+ * Add a listener for a given event.
+ *
+ * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+ * @param {(String|Symbol)} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {*} context The context to invoke the listener with.
+ * @param {Boolean} once Specify if the listener is a one-time listener.
+ * @returns {EventEmitter}
+ * @private
+ */
+function addListener(emitter, event, fn, context, once) {
+  if (typeof fn !== 'function') {
+    throw new TypeError('The listener must be a function');
+  }
+
+  var listener = new EE(fn, context || emitter, once)
+    , evt = prefix ? prefix + event : event;
+
+  if (!emitter._events[evt]) emitter._events[evt] = listener, emitter._eventsCount++;
+  else if (!emitter._events[evt].fn) emitter._events[evt].push(listener);
+  else emitter._events[evt] = [emitter._events[evt], listener];
+
+  return emitter;
+}
+
+/**
+ * Clear event by name.
+ *
+ * @param {EventEmitter} emitter Reference to the `EventEmitter` instance.
+ * @param {(String|Symbol)} evt The Event name.
+ * @private
+ */
+function clearEvent(emitter, evt) {
+  if (--emitter._eventsCount === 0) emitter._events = new Events();
+  else delete emitter._events[evt];
+}
+
+/**
+ * Minimal `EventEmitter` interface that is molded against the Node.js
+ * `EventEmitter` interface.
+ *
+ * @constructor
+ * @public
+ */
+function EventEmitter() {
+  this._events = new Events();
+  this._eventsCount = 0;
+}
+
+/**
+ * Return an array listing the events for which the emitter has registered
+ * listeners.
+ *
+ * @returns {Array}
+ * @public
+ */
+EventEmitter.prototype.eventNames = function eventNames() {
+  var names = []
+    , events
+    , name;
+
+  if (this._eventsCount === 0) return names;
+
+  for (name in (events = this._events)) {
+    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+  }
+
+  if (Object.getOwnPropertySymbols) {
+    return names.concat(Object.getOwnPropertySymbols(events));
+  }
+
+  return names;
+};
+
+/**
+ * Return the listeners registered for a given event.
+ *
+ * @param {(String|Symbol)} event The event name.
+ * @returns {Array} The registered listeners.
+ * @public
+ */
+EventEmitter.prototype.listeners = function listeners(event) {
+  var evt = prefix ? prefix + event : event
+    , handlers = this._events[evt];
+
+  if (!handlers) return [];
+  if (handlers.fn) return [handlers.fn];
+
+  for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
+    ee[i] = handlers[i].fn;
+  }
+
+  return ee;
+};
+
+/**
+ * Return the number of listeners listening to a given event.
+ *
+ * @param {(String|Symbol)} event The event name.
+ * @returns {Number} The number of listeners.
+ * @public
+ */
+EventEmitter.prototype.listenerCount = function listenerCount(event) {
+  var evt = prefix ? prefix + event : event
+    , listeners = this._events[evt];
+
+  if (!listeners) return 0;
+  if (listeners.fn) return 1;
+  return listeners.length;
+};
+
+/**
+ * Calls each of the listeners registered for a given event.
+ *
+ * @param {(String|Symbol)} event The event name.
+ * @returns {Boolean} `true` if the event had listeners, else `false`.
+ * @public
+ */
+EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events[evt]) return false;
+
+  var listeners = this._events[evt]
+    , len = arguments.length
+    , args
+    , i;
+
+  if (listeners.fn) {
+    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
+
+    switch (len) {
+      case 1: return listeners.fn.call(listeners.context), true;
+      case 2: return listeners.fn.call(listeners.context, a1), true;
+      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+    }
+
+    for (i = 1, args = new Array(len -1); i < len; i++) {
+      args[i - 1] = arguments[i];
+    }
+
+    listeners.fn.apply(listeners.context, args);
+  } else {
+    var length = listeners.length
+      , j;
+
+    for (i = 0; i < length; i++) {
+      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
+
+      switch (len) {
+        case 1: listeners[i].fn.call(listeners[i].context); break;
+        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
+        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
+        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
+        default:
+          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
+            args[j - 1] = arguments[j];
+          }
+
+          listeners[i].fn.apply(listeners[i].context, args);
+      }
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Add a listener for a given event.
+ *
+ * @param {(String|Symbol)} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {*} [context=this] The context to invoke the listener with.
+ * @returns {EventEmitter} `this`.
+ * @public
+ */
+EventEmitter.prototype.on = function on(event, fn, context) {
+  return addListener(this, event, fn, context, false);
+};
+
+/**
+ * Add a one-time listener for a given event.
+ *
+ * @param {(String|Symbol)} event The event name.
+ * @param {Function} fn The listener function.
+ * @param {*} [context=this] The context to invoke the listener with.
+ * @returns {EventEmitter} `this`.
+ * @public
+ */
+EventEmitter.prototype.once = function once(event, fn, context) {
+  return addListener(this, event, fn, context, true);
+};
+
+/**
+ * Remove the listeners of a given event.
+ *
+ * @param {(String|Symbol)} event The event name.
+ * @param {Function} fn Only remove the listeners that match this function.
+ * @param {*} context Only remove the listeners that have this context.
+ * @param {Boolean} once Only remove one-time listeners.
+ * @returns {EventEmitter} `this`.
+ * @public
+ */
+EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+  var evt = prefix ? prefix + event : event;
+
+  if (!this._events[evt]) return this;
+  if (!fn) {
+    clearEvent(this, evt);
+    return this;
+  }
+
+  var listeners = this._events[evt];
+
+  if (listeners.fn) {
+    if (
+      listeners.fn === fn &&
+      (!once || listeners.once) &&
+      (!context || listeners.context === context)
+    ) {
+      clearEvent(this, evt);
+    }
+  } else {
+    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+      if (
+        listeners[i].fn !== fn ||
+        (once && !listeners[i].once) ||
+        (context && listeners[i].context !== context)
+      ) {
+        events.push(listeners[i]);
+      }
+    }
+
+    //
+    // Reset the array, or remove it completely if we have no more listeners.
+    //
+    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+    else clearEvent(this, evt);
+  }
+
+  return this;
+};
+
+/**
+ * Remove all listeners, or those of the specified event.
+ *
+ * @param {(String|Symbol)} [event] The event name.
+ * @returns {EventEmitter} `this`.
+ * @public
+ */
+EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+  var evt;
+
+  if (event) {
+    evt = prefix ? prefix + event : event;
+    if (this._events[evt]) clearEvent(this, evt);
+  } else {
+    this._events = new Events();
+    this._eventsCount = 0;
+  }
+
+  return this;
+};
+
+//
+// Alias methods names because people roll like that.
+//
+EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+
+//
+// Expose the prefix.
+//
+EventEmitter.prefixed = prefix;
+
+//
+// Allow `EventEmitter` to be imported as module namespace.
+//
+EventEmitter.EventEmitter = EventEmitter;
+
+//
+// Expose the module.
+//
+if (true) {
+  module.exports = EventEmitter;
+}
 
 
 /***/ }),
@@ -44705,84 +45053,36 @@ var Tracks_1 = __webpack_require__(/*! ./components/Tracks */ "./src/components/
 var mixer_1 = __webpack_require__(/*! ./exporter/mixer */ "./src/exporter/mixer.ts");
 var microbit_1 = __webpack_require__(/*! ./exporter/microbit */ "./src/exporter/microbit.ts");
 var adafruit_1 = __webpack_require__(/*! ./exporter/adafruit */ "./src/exporter/adafruit.ts");
-var parser_1 = __webpack_require__(/*! ./parser */ "./src/parser.ts");
-var player_1 = __webpack_require__(/*! ./player */ "./src/player.ts");
+var parser_1 = __webpack_require__(/*! ./helpers/parser */ "./src/helpers/parser.ts");
+var player_1 = __webpack_require__(/*! ./helpers/player */ "./src/helpers/player.ts");
+var pxtextensions_1 = __webpack_require__(/*! ./lib/pxtextensions */ "./src/lib/pxtextensions.ts");
 var App = (function (_super) {
     __extends(App, _super);
     function App(props) {
         var _this = _super.call(this, props) || this;
-        _this.receivedResponse = function (resp) {
-            console.log(resp);
-            var target = resp.target;
-            switch (resp.event) {
-                case "extloaded": {
-                    _this.setState({ target: target });
-                    break;
-                }
-                case "extwritecode": break;
-                default: {
-                    _this.setState({ songs: JSON.parse(resp.resp.json) });
-                }
-            }
-        };
         _this.state = {
-            target: _this.getDefaultTarget(),
-            hasFileSupport: _this.isSupported(),
-            extensionId: _this.isIFrame() ? window.location.hash.substr(1) : undefined,
-            hideTarget: _this.isIFrame(),
+            target: props.target,
             songs: []
         };
-        if (_this.isIFrame()) {
-            window.parent.postMessage({
-                id: Math.random().toString(),
-                type: "pxtpkgext",
-                action: "extreadcode",
-                extId: _this.state.extensionId,
-                response: true
-            }, "*");
-        }
-        ;
         _this.parseFile = _this.parseFile.bind(_this);
         _this.onTargetChange = _this.onTargetChange.bind(_this);
-        _this.getResults = _this.getResults.bind(_this);
+        _this.export = _this.export.bind(_this);
         _this.beginImport = _this.beginImport.bind(_this);
         _this.handleTrackClick = _this.handleTrackClick.bind(_this);
+        props.client.on('read', _this.handleReadResponse);
         return _this;
     }
-    App.prototype.isSupported = function () {
-        return window.File && window.FileReader && window.FileList && window.Blob;
-    };
-    App.prototype.getDefaultTarget = function () {
-        if (!this.isIFrame()) {
-            var url = new URL(window.location.href);
-            var chosen = url.searchParams.get("target");
-            if (chosen)
-                return chosen.toLowerCase();
-            return "microbit";
-        }
-        return undefined;
-    };
-    App.prototype.isIFrame = function () {
-        try {
-            return window && window.self !== window.top;
-        }
-        catch (e) {
-            return true;
-        }
+    App.prototype.handleReadResponse = function (resp) {
+        this.setState({ songs: JSON.parse(resp.json) });
     };
     App.prototype.onTargetChange = function (e, _a) {
         var value = _a.value;
         this.setState({ target: value });
     };
-    App.prototype.componentDidMount = function () {
-        var _this = this;
-        window.addEventListener("message", function (ev) {
-            var resp = ev.data;
-            if (!resp)
-                return;
-            if (resp.type === "pxtpkgext")
-                _this.receivedResponse(resp);
-        }, false);
+    App.prototype.componentDidUpdate = function (prevProps, prevState) {
+        if (prevState.target != this.state.target) {
+            this.export();
+        }
     };
     App.prototype.parseFile = function (file) {
         var _this = this;
@@ -44807,9 +45107,10 @@ var App = (function (_super) {
         };
         reader.readAsBinaryString(file);
         this.setState({ isImporting: false });
+        this.export();
     };
-    App.prototype.getResults = function () {
-        var _a = this.state, target = _a.target, data = _a.partsData, extensionId = _a.extensionId, songs = _a.songs;
+    App.prototype.export = function () {
+        var _a = this.state, target = _a.target, data = _a.partsData, songs = _a.songs;
         if (target == "json") {
             return JSON.stringify(data, undefined, 2);
         }
@@ -44828,17 +45129,8 @@ var App = (function (_super) {
             }
         }
         var output = emitter.output(songs);
-        window.parent.postMessage({
-            id: Math.random().toString(),
-            type: "pxtpkgext",
-            action: "extwritecode",
-            extId: extensionId,
-            body: {
-                code: output,
-                json: JSON.stringify(songs)
-            }
-        }, "*");
-        return output;
+        pxtextensions_1.pxt.extensions.write(output, JSON.stringify(songs));
+        console.log(output);
     };
     App.prototype.beginImport = function () {
         this.setState({ isImporting: true });
@@ -44855,7 +45147,7 @@ var App = (function (_super) {
         this.player.play(index);
     };
     App.prototype.render = function () {
-        var _a = this.state, target = _a.target, hideTarget = _a.hideTarget, partsData = _a.partsData, selectedTrack = _a.selectedTrack, hasFileSupport = _a.hasFileSupport;
+        var _a = this.state, target = _a.target, partsData = _a.partsData, selectedTrack = _a.selectedTrack;
         var targetOptions = [{
                 text: 'micro:bit',
                 value: 'microbit'
@@ -44869,21 +45161,17 @@ var App = (function (_super) {
                 text: 'JSON',
                 value: 'json'
             }];
-        return (React.createElement("div", { className: "App " + (!target ? 'dimmable dimmed' : '') },
-            !hasFileSupport ?
-                React.createElement("div", null, "Reading files not supported by this browser") :
-                React.createElement("div", { className: "ui text container" }, partsData ?
-                    React.createElement("div", null,
-                        React.createElement(semantic_ui_react_1.Menu, { fixed: "top" },
-                            React.createElement(semantic_ui_react_1.Menu.Item, null,
-                                React.createElement(semantic_ui_react_1.Button, { onClick: this.beginImport }, "Import")),
-                            !hideTarget ? React.createElement(semantic_ui_react_1.Menu.Item, { name: 'targetselector' },
-                                React.createElement(semantic_ui_react_1.Dropdown, { placeholder: 'Target', fluid: true, selection: true, defaultValue: target, options: targetOptions, onChange: this.onTargetChange })) : undefined,
-                            React.createElement(semantic_ui_react_1.Menu.Menu, { position: "right" })),
-                        React.createElement(Tracks_1.Tracks, { data: partsData, selectedTrack: selectedTrack, handleTrackClick: this.handleTrackClick }),
-                        React.createElement("div", { id: "Results" },
-                            React.createElement("textarea", { id: "ResultsText", value: this.getResults() }))) :
-                    React.createElement(FileDrop_1.FileDrop, { parseFile: this.parseFile })),
+        return (React.createElement("div", { className: "App" },
+            React.createElement("div", { className: "ui text container" }, partsData ?
+                React.createElement("div", null,
+                    React.createElement(semantic_ui_react_1.Menu, { fixed: "top" },
+                        React.createElement(semantic_ui_react_1.Menu.Item, null,
+                            React.createElement(semantic_ui_react_1.Button, { onClick: this.beginImport }, "Import")),
+                        !pxtextensions_1.pxt.extensions.inIframe() ? React.createElement(semantic_ui_react_1.Menu.Item, { name: 'targetselector' },
+                            React.createElement(semantic_ui_react_1.Dropdown, { placeholder: 'Target', fluid: true, selection: true, defaultValue: target, options: targetOptions, onChange: this.onTargetChange })) : undefined,
+                        React.createElement(semantic_ui_react_1.Menu.Menu, { position: "right" })),
+                    React.createElement(Tracks_1.Tracks, { data: partsData, selectedTrack: selectedTrack, handleTrackClick: this.handleTrackClick })) :
+                React.createElement(FileDrop_1.FileDrop, { parseFile: this.parseFile })),
             React.createElement(semantic_ui_react_1.Modal, { open: this.state.isImporting },
                 React.createElement(semantic_ui_react_1.Modal.Content, { style: { height: '300px' } },
                     React.createElement(FileDrop_1.FileDrop, { parseFile: this.parseFile })))));
@@ -44891,6 +45179,94 @@ var App = (function (_super) {
     return App;
 }(React.Component));
 exports.App = App;
+
+
+/***/ }),
+
+/***/ "./src/PXTExtension.tsx":
+/*!******************************!*\
+  !*** ./src/PXTExtension.tsx ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    }
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(/*! react */ "react");
+var App_1 = __webpack_require__(/*! ./App */ "./src/App.tsx");
+var pxtextensions_1 = __webpack_require__(/*! ./lib/pxtextensions */ "./src/lib/pxtextensions.ts");
+var pxtclient_1 = __webpack_require__(/*! ./lib/pxtclient */ "./src/lib/pxtclient.ts");
+var PXTExtension = (function (_super) {
+    __extends(PXTExtension, _super);
+    function PXTExtension(props) {
+        var _this = _super.call(this, props) || this;
+        _this.handlePXTResponse = function (resp) {
+            console.log(resp);
+            var target = resp.target;
+            switch (resp.event) {
+                case "extloaded":
+                    _this.setState({ target: target });
+                    break;
+                case "extwritecode": break;
+                default: {
+                }
+            }
+        };
+        _this.state = {
+            target: _this.getDefaultTarget(),
+            isSupported: _this.isSupported()
+        };
+        _this.client = new pxtclient_1.PXTClient();
+        return _this;
+    }
+    PXTExtension.prototype.isSupported = function () {
+        return window.File && window.FileReader && window.FileList && window.Blob;
+    };
+    PXTExtension.prototype.getDefaultTarget = function () {
+        if (!this.isIFrame()) {
+            var url = new URL(window.location.href);
+            var chosen = url.searchParams.get("target");
+            if (chosen)
+                return chosen.toLowerCase();
+            return "microbit";
+        }
+        return undefined;
+    };
+    PXTExtension.prototype.isIFrame = function () {
+        try {
+            return window && window.self !== window.top;
+        }
+        catch (e) {
+            return true;
+        }
+    };
+    PXTExtension.prototype.componentDidMount = function () {
+        if (!pxtextensions_1.pxt.extensions.inIframe())
+            return;
+        pxtextensions_1.pxt.extensions.setup(this.handlePXTResponse);
+        pxtextensions_1.pxt.extensions.requestRead();
+    };
+    PXTExtension.prototype.render = function () {
+        var _a = this.state, target = _a.target, isSupported = _a.isSupported;
+        return (React.createElement("div", { className: "MCExtension " + (!target ? 'dimmable dimmed' : '') }, !isSupported ? React.createElement("div", null, "This extension is not supported on your browser") : React.createElement(App_1.App, { target: target, client: this.client })));
+    };
+    return PXTExtension;
+}(React.Component));
+exports.PXTExtension = PXTExtension;
 
 
 /***/ }),
@@ -45045,7 +45421,7 @@ var Track = (function (_super) {
             onClick(index);
     };
     Track.prototype.render = function () {
-        var _a = this.props, track = _a.track, selected = _a.selected;
+        var _a = this.props, track = _a.track, index = _a.index, selected = _a.selected;
         var minMidi = 127;
         var maxMidi = 0;
         track.notes.forEach(function (note) {
@@ -45061,8 +45437,8 @@ var Track = (function (_super) {
         return (React.createElement(semantic_ui_react_1.Segment, { className: "" + (selected ? 'selected' : ''), style: { width: width + "px" }, onClick: this.handleClick },
             React.createElement("div", { className: "name" }, track.instrument || track.name),
             React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 " + width + " " + height },
-                React.createElement("g", { transform: "translate(0 -" + (127 - maxMidi) * scale + ") scale(1 " + scale + ")" }, track.notes.map(function (note) {
-                    return React.createElement(Note_1.Note, { note: note });
+                React.createElement("g", { transform: "translate(0 -" + (127 - maxMidi) * scale + ") scale(1 " + scale + ")" }, track.notes.map(function (note, nIndex) {
+                    return React.createElement(Note_1.Note, { key: "note" + index + "_" + nIndex, note: note });
                 })))));
     };
     return Track;
@@ -45116,7 +45492,7 @@ var Tracks = (function (_super) {
             React.createElement("div", { className: "ui container fluid" },
                 React.createElement("div", null, data.tracks.map(function (track, index) {
                     return track.notes.length > 0 ?
-                        React.createElement(Track_1.Track, { track: track, index: index, selected: selectedTrack == index, onClick: _this.handleTrackClick }) : undefined;
+                        React.createElement(Track_1.Track, { key: "track" + index, track: track, index: index, selected: selectedTrack == index, onClick: _this.handleTrackClick }) : undefined;
                 })))));
     };
     return Tracks;
@@ -45272,31 +45648,10 @@ exports.MixerEmitter = MixerEmitter;
 
 /***/ }),
 
-/***/ "./src/index.tsx":
-/*!***********************!*\
-  !*** ./src/index.tsx ***!
-  \***********************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var React = __webpack_require__(/*! react */ "react");
-var ReactDOM = __webpack_require__(/*! react-dom */ "react-dom");
-var App_1 = __webpack_require__(/*! ./App */ "./src/App.tsx");
-ReactDOM.render(React.createElement(App_1.App, null), document.getElementById('root'));
-if (true) {
-    module.hot.accept();
-}
-
-
-/***/ }),
-
-/***/ "./src/parser.ts":
-/*!***********************!*\
-  !*** ./src/parser.ts ***!
-  \***********************/
+/***/ "./src/helpers/parser.ts":
+/*!*******************************!*\
+  !*** ./src/helpers/parser.ts ***!
+  \*******************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -45376,10 +45731,10 @@ exports.parseTrack = parseTrack;
 
 /***/ }),
 
-/***/ "./src/player.ts":
-/*!***********************!*\
-  !*** ./src/player.ts ***!
-  \***********************/
+/***/ "./src/helpers/player.ts":
+/*!*******************************!*\
+  !*** ./src/helpers/player.ts ***!
+  \*******************************/
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -45410,6 +45765,135 @@ var Player = (function () {
     return Player;
 }());
 exports.Player = Player;
+
+
+/***/ }),
+
+/***/ "./src/index.tsx":
+/*!***********************!*\
+  !*** ./src/index.tsx ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var React = __webpack_require__(/*! react */ "react");
+var ReactDOM = __webpack_require__(/*! react-dom */ "react-dom");
+var PXTExtension_1 = __webpack_require__(/*! ./PXTExtension */ "./src/PXTExtension.tsx");
+ReactDOM.render(React.createElement(PXTExtension_1.PXTExtension, null), document.getElementById('root'));
+if (true) {
+    module.hot.accept();
+}
+
+
+/***/ }),
+
+/***/ "./src/lib/pxtclient.ts":
+/*!******************************!*\
+  !*** ./src/lib/pxtclient.ts ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var eventemitter3_1 = __webpack_require__(/*! eventemitter3 */ "./node_modules/eventemitter3/index.js");
+var PXTClient = (function () {
+    function PXTClient() {
+        this.eventEmitter = new eventemitter3_1.default();
+    }
+    PXTClient.prototype.on = function (eventName, listener) {
+        this.eventEmitter.on(eventName, listener);
+    };
+    PXTClient.prototype.removeEventListener = function (eventName, listener) {
+        this.eventEmitter.removeListener(eventName, listener);
+    };
+    PXTClient.prototype.emit = function (eventName, payload, error) {
+        if (error === void 0) { error = false; }
+        this.eventEmitter.emit(eventName, payload, error);
+    };
+    PXTClient.prototype.getEventEmitter = function () {
+        return this.eventEmitter;
+    };
+    return PXTClient;
+}());
+exports.PXTClient = PXTClient;
+
+
+/***/ }),
+
+/***/ "./src/lib/pxtextensions.ts":
+/*!**********************************!*\
+  !*** ./src/lib/pxtextensions.ts ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var pxt;
+(function (pxt) {
+    var extensions;
+    (function (extensions) {
+        function inIframe() {
+            try {
+                return window && window.self !== window.top;
+            }
+            catch (e) {
+                return true;
+            }
+        }
+        extensions.inIframe = inIframe;
+        function read() {
+        }
+        extensions.read = read;
+        function setup(callback) {
+            window.addEventListener("message", function (ev) {
+                var resp = ev.data;
+                if (!resp)
+                    return;
+                if (resp.type === "pxtpkgext")
+                    callback(resp);
+            }, false);
+        }
+        extensions.setup = setup;
+        function requestRead() {
+            if (!inIframe())
+                return;
+            window.parent.postMessage({
+                id: Math.random().toString(),
+                type: "pxtpkgext",
+                action: "extreadcode",
+                extId: pxt.extensions.getExtensionId(),
+                response: true
+            }, "*");
+        }
+        extensions.requestRead = requestRead;
+        function write(code, json) {
+            if (!inIframe())
+                return;
+            window.parent.postMessage({
+                id: Math.random().toString(),
+                type: "pxtpkgext",
+                action: "extwritecode",
+                extId: getExtensionId(),
+                body: {
+                    code: code,
+                    json: json
+                }
+            }, "*");
+        }
+        extensions.write = write;
+        function getExtensionId() {
+            return inIframe() ? window.location.hash.substr(1) : undefined;
+        }
+        extensions.getExtensionId = getExtensionId;
+    })(extensions = pxt.extensions || (pxt.extensions = {}));
+})(pxt = exports.pxt || (exports.pxt = {}));
 
 
 /***/ }),
