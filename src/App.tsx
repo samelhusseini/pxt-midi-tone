@@ -54,14 +54,26 @@ export class App extends React.Component<AppProps, AppState> {
         this.handleSongClick = this.handleSongClick.bind(this);
         this.handleTrackClick = this.handleTrackClick.bind(this);
         this.handleReadResponse = this.handleReadResponse.bind(this);
+        this.handleHidden = this.handleHidden.bind(this);
         this.getCurrentSong = this.getCurrentSong.bind(this);
+        this.clearAll = this.clearAll.bind(this);
 
         props.client.on('read', this.handleReadResponse);
+        props.client.on('hidden', this.handleHidden);
     }
 
     handleReadResponse(resp: ReadResponse) {
-        if (resp && resp.json) {
+        if (resp && resp.json && resp.json != ' ') {
             this.setState({ songs: JSON.parse(resp.json), selectedSong: 0 });
+        }
+    }
+
+    handleHidden() {
+        const { songs } = this.state;
+        if (songs && songs.length > 0) {
+            this.export(songs);
+        } else {
+            pxt.extensions.write(' ', ' ');
         }
     }
 
@@ -105,8 +117,6 @@ export class App extends React.Component<AppProps, AppState> {
 
             if (target == "json") {
                 console.log(JSON.stringify(data, undefined, 2));
-            } else {
-                this.export(songs);
             }
 
             this.setState({ songs, selectedSong: songs.length - 1 });
@@ -131,7 +141,10 @@ export class App extends React.Component<AppProps, AppState> {
             }
             case "microbit": {
                 emitter = new MicrobitEmitter();
+                break;
             }
+            default:
+                return;
         }
         const output = emitter.output(songs);
 
@@ -149,8 +162,13 @@ export class App extends React.Component<AppProps, AppState> {
         this.setState({ isImporting: true });
     }
 
+    clearAll() {
+        this.setState({ songs: [], selectedSong: undefined })
+    }
+
     handleSongClick(index: number) {
         this.setState({ selectedSong: index, selectedTrack: undefined });
+        if (this.player) this.player.dispose();
     }
 
     handleTrackClick(index: number) {
@@ -200,13 +218,13 @@ export class App extends React.Component<AppProps, AppState> {
                         <div>
                             <Menu fixed="top">
                                 <Menu.Item>
-                                    <Button onClick={this.beginImport}>Import</Button>
+                                    <Button primary onClick={this.beginImport}>Import</Button>
                                 </Menu.Item>
                                 {/* {!pxt.extensions.inIframe() ? <Menu.Item name='targetselector'>
                                     <Dropdown placeholder='Target' fluid selection defaultValue={target} options={targetOptions} onChange={this.onTargetChange} />
                                 </Menu.Item> : undefined} */}
                                 <Menu.Menu position="right">
-
+                                    <Button className="item" onClick={this.clearAll}>Clear All</Button>
                                 </Menu.Menu>
                             </Menu>
                             <Songs songs={songs} selectedSong={selectedSong} handleSelect={this.handleSongClick} />
