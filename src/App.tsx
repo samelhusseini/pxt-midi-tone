@@ -52,6 +52,7 @@ export class App extends React.Component<AppProps, AppState> {
 
         this.beginImport = this.beginImport.bind(this);
         this.handleTrackClick = this.handleTrackClick.bind(this);
+        this.handleReadResponse = this.handleReadResponse.bind(this);
 
         props.client.on('read', this.handleReadResponse);
     }
@@ -72,7 +73,9 @@ export class App extends React.Component<AppProps, AppState> {
 
     componentDidUpdate(prevProps: AppProps, prevState: AppState) {
         if (prevState.target != this.state.target) {
-            this.export(this.state.partsData, this.state.songs);
+            if (this.state.partsData && this.state.songs) {
+                this.export(this.state.partsData, this.state.songs);
+            }
         }
     }
 

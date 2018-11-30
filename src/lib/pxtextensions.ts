@@ -92,7 +92,7 @@ export namespace pxt.extensions {
     export function write(code: string, json?: string) {
         if (!inIframe()) return;
 
-        const msg: any = mkRequest('extreadcode');
+        const msg: any = mkRequest('extwritecode');
         msg.body = {
             code: code,
             json: json
