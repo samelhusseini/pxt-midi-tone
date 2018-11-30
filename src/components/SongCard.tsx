@@ -26,6 +26,6 @@ export class SongCard extends React.Component<SongCardProps, {}> {
     render() {
         const { song, selected } = this.props;
 
-        return (<Menu.Item className={`${selected ? 'selected' : ''}`} onClick={this.handleClick} name={song.title} />);
+        return (<Menu.Item active={selected} onClick={this.handleClick} name={song.title} />);
     }
 }
