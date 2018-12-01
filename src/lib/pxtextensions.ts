@@ -10,7 +10,6 @@ export namespace pxt.extensions {
         jres?: string;
     }
 
-
     export function inIframe() {
         try {
             return window && window.self !== window.top;
@@ -84,9 +83,17 @@ export namespace pxt.extensions {
         window.parent.postMessage(msg, "*");
     }
 
-    export function read() {
+    export function read(client?: PXTClient) {
         console.log('requesting read code');
-        if (!inIframe()) return;
+        if (!inIframe()) {
+            // Read from local storage instead
+            const resp = {
+                code: (window as any).localStorage['code'],
+                json: (window as any).localStorage['json']
+            }
+            if (client) client.emit('read', resp);
+            return;
+        }
 
         const msg = mkRequest('extreadcode');
         window.parent.postMessage(msg, "*");
@@ -102,7 +109,12 @@ export namespace pxt.extensions {
 
     export function write(code: string, json?: string) {
         console.log('writing code:', code, json);
-        if (!inIframe()) return;
+        if (!inIframe()) {
+            // Write to local storage instead
+            (window as any).localStorage['code'] = code;
+            (window as any).localStorage['json'] = json;
+            return;
+        }
 
         const msg: any = mkRequest('extwritecode');
         msg.body = {
@@ -156,6 +168,81 @@ export namespace pxt.extensions {
         return inIframe() ? window.location.hash.substr(1) : undefined;
     }
 }
+
+
+export namespace pxt.extensions.ui {
+
+    export function isTouchEnabled(): boolean {
+        return typeof window !== "undefined" &&
+            ('ontouchstart' in window                              // works on most browsers
+                || (navigator && navigator.maxTouchPoints > 0));       // works on IE10/11 and Surface);
+    }
+
+    export function hasPointerEvents(): boolean {
+        return typeof window != "undefined" && !!(window as any).PointerEvent;
+    }
+
+    export interface IPointerEvents {
+        up: string,
+        down: string[],
+        move: string,
+        enter: string,
+        leave: string
+    }
+
+    export const pointerEvents: IPointerEvents = hasPointerEvents() ? {
+        up: "pointerup",
+        down: ["pointerdown"],
+        move: "pointermove",
+        enter: "pointerenter",
+        leave: "pointerleave"
+    } : isTouchEnabled() ?
+            {
+                up: "mouseup",
+                down: ["mousedown", "touchstart"],
+                move: "touchmove",
+                enter: "touchenter",
+                leave: "touchend"
+            } :
+            {
+                up: "mouseup",
+                down: ["mousedown"],
+                move: "mousemove",
+                enter: "mouseenter",
+                leave: "mouseleave"
+            };
+
+    export function getClientXYFromEvent(ev: MouseEvent | PointerEvent | TouchEvent) {
+        let clientX;
+        let clientY;
+        if ((ev as TouchEvent).changedTouches && (ev as TouchEvent).changedTouches.length == 1) {
+            // Handle touch events
+            clientX = (ev as TouchEvent).changedTouches[0].clientX;
+            clientY = (ev as TouchEvent).changedTouches[0].clientY;
+        } else {
+            // All other events (pointer + mouse)
+            clientX = (ev as MouseEvent).clientX;
+            clientY = (ev as MouseEvent).clientY;
+        }
+        return {
+            clientX,
+            clientY
+        }
+    }
+
+    export function useTouchEvents() {
+        return !hasPointerEvents() && isTouchEnabled();
+    }
+
+    export function usePointerEvents() {
+        return hasPointerEvents();
+    }
+
+    export function useMouseEvents() {
+        return !hasPointerEvents() && !isTouchEnabled();
+    }
+}
+
 
 export class PXTClient {
 

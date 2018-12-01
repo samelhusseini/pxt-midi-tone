@@ -1,4 +1,3 @@
-
 const path = require('path'),
     webpack = require('webpack'),
     HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -9,7 +8,7 @@ module.exports = {
         app: ["./src/index.tsx"],
     },
     output: {
-        path: path.resolve(__dirname, 'docs'),
+        path: path.resolve(__dirname, 'build'),
         filename: 'js/[name].bundle.js'
     },
 
@@ -35,6 +34,10 @@ module.exports = {
         new HtmlWebpackPlugin({
             inject: false,
             hash: false,
+            semanticUIPath: 'semantic-ui-css',
+            reactSliderPath: 'rc-slider',
+            reactPath: 'react',
+            reactDomPath: 'react-dom',
             react: 'development',
             template: './src/index.html',
             filename: 'index.html'
@@ -42,7 +45,8 @@ module.exports = {
     ],
     devServer: {
         contentBase: [
-            path.join(__dirname, 'docs'),
+            path.join(__dirname, 'build'),
+            path.join(__dirname, 'dist'),
             path.join(__dirname, 'node_modules'),
         ],
         hot: true,

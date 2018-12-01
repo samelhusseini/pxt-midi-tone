@@ -9,7 +9,7 @@
     <script type="text/javascript" src="https://tonejs.github.io/build/Tone.min.js"></script>
     <script type="text/javascript" src="https://tonejs.github.io/MidiConvert/build/MidiConvert.js"></script>
 
-    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/semantic-ui@2.4.0/dist/semantic.min.css" />
+    <link rel="stylesheet" href="<%= htmlWebpackPlugin.options.semanticUIPath %>/semantic.min.css" />
     <link rel="stylesheet" type="text/css" href="style.css" />
     <title>pxt-midi-tone</title>
     <link rel="icon" href="./favicon.ico" type="image/x-icon" />
@@ -18,8 +18,8 @@
 <body>
     <div id="root"></div>
 
-    <script src="https://unpkg.com/react@16/umd/react.<%= htmlWebpackPlugin.options.react %>.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.<%= htmlWebpackPlugin.options.react %>.js" crossorigin></script>
+    <script src="<%= htmlWebpackPlugin.options.reactPath %>/umd/react.<%= htmlWebpackPlugin.options.react %>.js" crossorigin></script>
+    <script src="<%= htmlWebpackPlugin.options.reactDomPath %>/umd/react-dom.<%= htmlWebpackPlugin.options.react %>.js" crossorigin></script>
 
     <script type="text/javascript" src="<%= htmlWebpackPlugin.files.chunks.app.entry %>"></script>
 
