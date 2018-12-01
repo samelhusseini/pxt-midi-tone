@@ -1,6 +1,8 @@
 # pxt-midi-tone
 
+A MIDI to tone extension for MakeCode
 
+Try it out [here](https://samelhusseini.github.io/pxt-midi-tone/)
 
 ## Supported targets
 
